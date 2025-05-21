@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     console.log(`Found ${nfts.length} NFTs for ca: ${ca || 'all'}`);
     return NextResponse.json(nfts, { status: 200 });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? error.stack : undefined;
 
     console.error('Error in GET /api/nfts:', errorMessage, errorStack);
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     console.log('Created NFT:', nft);
     return NextResponse.json(nft, { status: 201 });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? error.stack : undefined;
 
     console.error('Error in POST /api/nfts:', errorMessage, errorStack);
