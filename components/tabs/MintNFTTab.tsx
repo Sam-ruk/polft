@@ -272,70 +272,70 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
           className="p-1.5 border rounded text-xs sm:text-sm w-[50vw] min-w-[80px]"
         />
         <input
-  type="text"
-  placeholder="Price (MONAD)"
-  value={price}
-  onChange={(e) => {
-    const val = e.target.value;
-    if (/^\d*\.?\d*$/.test(val)) {
-      setPrice(val);
-      if (val === "" || parseFloat(val) === 0) {
-        setPriceError("Price must be greater than 0");
-      } else {
-        setPriceError("");
-      }
-    } else {
-      setPriceError("Only numeric values allowed");
-    }
-  }}
-  className="p-1.5 border rounded text-xs sm:text-sm w-[50vw] min-w-[80px]"
-/>
-{priceError && (
-  <p className="text-red-500 text-xs mt-1">{priceError}</p>
-)}
+          type="text"
+          placeholder="Price (MONAD)"
+          value={price}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (/^\d*\.?\d*$/.test(val)) {
+              setPrice(val);
+              if (val === "" || parseFloat(val) === 0) {
+                setPriceError("Price must be greater than 0");
+              } else {
+                setPriceError("");
+              }
+            } else {
+              setPriceError("Only numeric values allowed");
+            }
+          }}
+          className="p-1.5 border rounded text-xs sm:text-sm w-[50vw] min-w-[80px]"
+        />
+        {priceError && (
+          <p className="text-red-500 text-xs mt-1">{priceError}</p>
+        )}
 
-<input
-  type="text"
-  placeholder="Total Supply"
-  value={totalSupply}
-  onChange={(e) => {
-    const val = e.target.value;
-    if (/^\d*$/.test(val)) {
-      const num = Number(val);
-      setTotalSupply(val);
-      if (val === "" || num < 2) {
-        setSupplyError("Supply must be an integer ≥ 2");
-      } else {
-        setSupplyError("");
-      }
-    } else {
-      setSupplyError("Only whole numbers allowed");
-    }
-  }}
-  className="p-1.5 border rounded text-xs sm:text-sm w-[50vw] min-w-[80px]"
-/>
-{supplyError && (
-  <p className="text-red-500 text-xs mt-1">{supplyError}</p>
-)}
+        <input
+          type="text"
+          placeholder="Total Supply"
+          value={totalSupply}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (/^\d*$/.test(val)) {
+              const num = Number(val);
+              setTotalSupply(val);
+              if (val === "" || num < 2) {
+                setSupplyError("Supply must be an integer ≥ 2");
+              } else {
+                setSupplyError("");
+              }
+            } else {
+              setSupplyError("Only whole numbers allowed");
+            }
+          }}
+          className="p-1.5 border rounded text-xs sm:text-sm w-[50vw] min-w-[80px]"
+        />
+        {supplyError && (
+          <p className="text-red-500 text-xs mt-1">{supplyError}</p>
+        )}
 
         <button
-  onClick={handleMintNFT}
-  disabled={
-    isLoading ||
-    !address ||
-    !!priceError ||
-    !!supplyError ||
-    !price ||
-    !totalSupply
-  }
-  className={`px-3 py-1.5 sm:px-4 sm:py-2 bg-[#FFD700] text-[#4B0082] font-bold rounded-[15px] border-[2px] sm:border-[3px] border-[#800080] hover:bg-[#FFEC8B] hover:scale-105 active:scale-95 transition-all duration-300 w-[50vw] min-w-[80px] text-xs sm:text-sm ${
-    isLoading || !address || !!priceError || !!supplyError || !price || !totalSupply
-      ? "opacity-50 cursor-not-allowed"
-      : ""
-  }`}
->
-  {isLoading ? "Creating..." : "Create NFT"}
-</button>
+          onClick={handleMintNFT}
+          disabled={
+            isLoading ||
+            !address ||
+            !!priceError ||
+            !!supplyError ||
+            !price ||
+            !totalSupply
+          }
+          className={`px-3 py-1.5 sm:px-4 sm:py-2 bg-[#FFD700] text-[#4B0082] font-bold rounded-[15px] border-[2px] sm:border-[3px] border-[#800080] hover:bg-[#FFEC8B] hover:scale-105 active:scale-95 transition-all duration-300 w-[50vw] min-w-[80px] text-xs sm:text-sm ${
+            isLoading || !address || !!priceError || !!supplyError || !price || !totalSupply
+              ? "opacity-50 cursor-not-allowed"
+              : ""
+          }`}
+        >
+          {isLoading ? "Creating..." : "Create NFT"}
+        </button>
 
         {error && <p className="text-red-500 text-xs w-[50vw] min-w-[80px] text-center">{error}</p>}
       </div>
