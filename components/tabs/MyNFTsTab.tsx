@@ -5,7 +5,6 @@ import Image from "next/image";
 
 interface MyNFTsTabProps {
   fid: string;
-  onCreatePoll: (ca: string) => void;
 }
 
 interface NFT {
@@ -15,7 +14,7 @@ interface NFT {
   image: string;
 }
 
-export const MyNFTsTab = ({ fid, onCreatePoll }: MyNFTsTabProps) => {
+export const MyNFTsTab = ({ fid }: MyNFTsTabProps) => {
   const [nfts, setNfts] = useState<NFT[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,9 +58,9 @@ export const MyNFTsTab = ({ fid, onCreatePoll }: MyNFTsTabProps) => {
   }, [fid]);
 
   return (
-<div className="absolute inset-0 bg-[#d19ffc] px-4 py-8 pt-20 overflow-auto">
-  <div className="w-full max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-2xl min-h-fit">
-    <h1 className="text-4xl font-bold text-center text-black mb-6" style={{ fontFamily: "Pacifico" }}>
+    <div className="absolute inset-0 bg-[#d19ffc] px-4 py-8 pt-20 overflow-auto">
+      <div className="w-full max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-2xl min-h-fit">
+        <h1 className="text-4xl font-bold text-center text-black mb-6" style={{ fontFamily: "Pacifico" }}>
           My NFTs
         </h1>
 
