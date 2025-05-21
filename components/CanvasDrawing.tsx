@@ -5,7 +5,7 @@ import { debounce } from "lodash";
 
 interface CanvasDrawingProps {
   setCanvasImage: (image: string | null) => void;
-  setCanvasSize?: (size: number) => void; 
+  setCanvasSize?: (size: number) => void;
 }
 
 export const CanvasDrawing = ({ setCanvasImage, setCanvasSize }: CanvasDrawingProps) => {
@@ -32,6 +32,7 @@ export const CanvasDrawing = ({ setCanvasImage, setCanvasSize }: CanvasDrawingPr
     }, 50),
     []
   );
+
   const debouncedSetPenSize = useCallback(
     debounce((size: number) => {
       console.log("Setting pen size:", size);
@@ -52,7 +53,7 @@ export const CanvasDrawing = ({ setCanvasImage, setCanvasSize }: CanvasDrawingPr
     const newSize = Math.max(minWidth, Math.min(maxWidth, containerWidth));
 
     setLocalCanvasSize(newSize);
-    if (setCanvasSize) setCanvasSize(newSize); 
+    if (setCanvasSize) setCanvasSize(newSize);
 
     const canvas = canvasRef.current;
     const drawingCanvas = drawingCanvasRef.current;
@@ -122,6 +123,11 @@ export const CanvasDrawing = ({ setCanvasImage, setCanvasSize }: CanvasDrawingPr
       const ctx = drawingCanvas.getContext("2d");
       if (!ctx) return;
 
+      // Prevent default scrolling for touch events
+      if ("touches" in e) {
+        e.preventDefault();
+      }
+
       setIsDrawing(true);
       const pos = getEventPosition(e, drawingCanvas);
       ctx.beginPath();
@@ -151,6 +157,11 @@ export const CanvasDrawing = ({ setCanvasImage, setCanvasSize }: CanvasDrawingPr
       if (!drawingCanvas) return;
       const ctx = drawingCanvas.getContext("2d");
       if (!ctx) return;
+
+      // Prevent default scrolling for touch events
+      if ("touches" in e) {
+        e.preventDefault();
+      }
 
       const pos = getEventPosition(e, drawingCanvas);
       ctx.lineTo(pos.x, pos.y);
@@ -350,12 +361,12 @@ export const CanvasDrawing = ({ setCanvasImage, setCanvasSize }: CanvasDrawingPr
         <canvas
           ref={canvasRef}
           className="absolute top-0 left-0 w-full h-full rounded-2xl"
-          style={{ width: "100%", height: "100%" }}
+          style={{ width: "100%", height: "100%", touchAction: "none" }}
         />
         <canvas
           ref={drawingCanvasRef}
           className="absolute top-0 left-0 w-full h-full rounded-2xl"
-          style={{ width: "100%", height: "100%" }}
+          style={{ width: "100%", height: "100%", touchAction: "none" }}
           onMouseDown={startDrawing}
           onMouseMove={draw}
           onMouseUp={stopDrawing}
