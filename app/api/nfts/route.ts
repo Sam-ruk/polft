@@ -13,9 +13,11 @@ export async function GET(request: Request) {
     console.log(`Found ${nfts.length} NFTs for ca: ${ca || 'all'}`);
     return NextResponse.json(nfts, { status: 200 });
   } catch (error) {
-    console.error('Error in GET /api/nfts:', error.message, error.stack);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('Error in GET /api/nfts:', errorMessage, errorStack);
     return NextResponse.json(
-      { error: 'Internal Server Error', details: error.message },
+      { error: 'Internal Server Error', details: errorMessage },
       { status: 500 }
     );
   }
@@ -38,12 +40,15 @@ export async function POST(request: Request) {
     console.log('Created NFT:', nft);
     return NextResponse.json(nft, { status: 201 });
   } catch (error) {
-    console.error('Error in POST /api/nfts:', error.message, error.stack);
-    if (error.code === 11000) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('Error in POST /api/nfts:', errorMessage, errorStack);
+    
+    if (error instanceof Error && 'code' in error && error['code'] === 11000) {
       return NextResponse.json({ error: 'NFT with this ca already exists' }, { status: 409 });
     }
     return NextResponse.json(
-      { error: 'Internal Server Error', details: error.message },
+      { error: 'Internal Server Error', details: errorMessage },
       { status: 500 }
     );
   }
