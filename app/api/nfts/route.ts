@@ -13,12 +13,9 @@ export async function GET(request: Request) {
     console.log(`Found ${nfts.length} NFTs for ca: ${ca || 'all'}`);
     return NextResponse.json(nfts, { status: 200 });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorStack = error instanceof Error ? error.stack : undefined;
-
     console.error('Error in GET /api/nfts.');
     return NextResponse.json(
-      { error: 'Internal Server Error', details: errorMessage },
+      { error: 'Internal Server Error', details: error.message },
       { status: 500 }
     );
   }
@@ -41,22 +38,12 @@ export async function POST(request: Request) {
     console.log('Created NFT:', nft);
     return NextResponse.json(nft, { status: 201 });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorStack = error instanceof Error ? error.stack : undefined;
-
     console.error('Error in POST /api/nfts.');
-
-    if (
-      error &&
-      typeof error === 'object' &&
-      'code' in error &&
-      (error as any).code === 11000
-    ) {
+    if (error.code === 11000) {
       return NextResponse.json({ error: 'NFT with this ca already exists' }, { status: 409 });
     }
-
     return NextResponse.json(
-      { error: 'Internal Server Error', details: errorMessage },
+      { error: 'Internal Server Error', details: error.message },
       { status: 500 }
     );
   }
