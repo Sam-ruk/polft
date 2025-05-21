@@ -315,7 +315,7 @@ export const PurchasedNFTsTab = ({ fid }: PurchasedNFTsTabProps) => {
 
               <div className="mb-4">
                 <h3 className="text-lg font-semibold text-[#4B0082]">{mintDetails.name}</h3>
-                <p className="text-sm">Mint Price: {mintDetails.mintPrice} MONAD</p>
+                <p className="text-sm">Mint Price: {mintDetails.mintPrice} MON</p>
                 <p className="text-sm mb-2">Supply: {mintDetails.mintedCount}/{mintDetails.totalSupply}</p>
 
                 {mintDetails.image && (
