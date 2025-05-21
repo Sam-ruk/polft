@@ -224,7 +224,7 @@ export const PolFT = () => {
         {walletError && (
           <div className="mb-4 text-center">
             <p className="text-red-500 text-sm">{walletError}</p>
-            <p className="text-gray-600 text-xs mt-1">Check the browser console (F12 > Console) for more details.</p>
+            <p className="text-gray-600 text-xs mt-1">Check the browser console (F12 ➡ Console) for more details.</p>
           </div>
         )}
         {addFrameStatus && <DialogBox message={addFrameStatus} onClose={() => setAddFrameStatus(null)} />}
