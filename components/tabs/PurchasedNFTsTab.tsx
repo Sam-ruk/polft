@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { useAccount, useWriteContract } from "wagmi";
+import { useAccount, useWriteContract, useSwitchChain } from "wagmi";
 import { createPublicClient, http } from "viem";
 import { ethers } from "ethers";
 import { singleNFTABI } from "../../lib/contractABI";
@@ -29,8 +29,9 @@ interface MintDetails {
 }
 
 export const PurchasedNFTsTab = ({ fid }: PurchasedNFTsTabProps) => {
-  const { address } = useAccount();
+  const { address, chainId } = useAccount();
   const { writeContractAsync } = useWriteContract();
+  const { switchChainAsync } = useSwitchChain();
   const [nfts, setNfts] = useState<NFT[]>([]);
   const [loading, setLoading] = useState(true);
   const [contractAddress, setContractAddress] = useState("");
@@ -38,6 +39,8 @@ export const PurchasedNFTsTab = ({ fid }: PurchasedNFTsTabProps) => {
   const [isMintLoading, setIsMintLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [mintDetails, setMintDetails] = useState<MintDetails | null>(null);
+
+  const targetChainId = 10143; // Monad Testnet
 
   // Fetch purchased NFTs
   const fetchNFTs = async () => {
@@ -74,6 +77,10 @@ export const PurchasedNFTsTab = ({ fid }: PurchasedNFTsTabProps) => {
       setMintError("Invalid contract address");
       return;
     }
+    if (chainId !== targetChainId) {
+      setMintError("Please switch to Monad Testnet (Chain ID: 10143)");
+      return;
+    }
 
     setIsMintLoading(true);
     setMintError(null);
@@ -82,7 +89,7 @@ export const PurchasedNFTsTab = ({ fid }: PurchasedNFTsTabProps) => {
     try {
       const publicClient = createPublicClient({
         chain: {
-          id: 10143,
+          id: targetChainId,
           name: "Monad Testnet",
           rpcUrls: { default: { http: ["https://testnet-rpc.monad.xyz"] } },
           nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 },
@@ -137,7 +144,7 @@ export const PurchasedNFTsTab = ({ fid }: PurchasedNFTsTabProps) => {
       });
       setIsDialogOpen(true);
     } catch (error: any) {
-      setMintError(`Failed to load NFT details.`);
+      setMintError(`Failed to load NFT details: ${error.message || "Unknown error"}`);
       console.error("Load details error:", error);
     } finally {
       setIsMintLoading(false);
@@ -154,6 +161,15 @@ export const PurchasedNFTsTab = ({ fid }: PurchasedNFTsTabProps) => {
       setMintError("Invalid contract address");
       return;
     }
+    if (chainId !== targetChainId) {
+      setMintError("Please switch to Monad Testnet (Chain ID: 10143)");
+      try {
+        await switchChainAsync({ chainId: targetChainId });
+      } catch (error: any) {
+        setMintError(`Failed to switch to Monad Testnet: ${error.message || "Unknown error"}`);
+        return;
+      }
+    }
 
     setIsMintLoading(true);
     setMintError(null);
@@ -161,7 +177,7 @@ export const PurchasedNFTsTab = ({ fid }: PurchasedNFTsTabProps) => {
     try {
       const publicClient = createPublicClient({
         chain: {
-          id: 10143,
+          id: targetChainId,
           name: "Monad Testnet",
           rpcUrls: { default: { http: ["https://testnet-rpc.monad.xyz"] } },
           nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 },
@@ -200,7 +216,7 @@ export const PurchasedNFTsTab = ({ fid }: PurchasedNFTsTabProps) => {
 
       if (!receipt) {
         throw new Error(
-          `Mint transaction receipt not found after ${maxRetries} retries. Check: https://explorer.testnet.monad.xyz/tx/${txHash}`,
+          `Mint transaction receipt not found after ${maxRetries} retries. Check: https://explorer.testnet.monad.xyz/tx/${txHash}`
         );
       }
       if (receipt.status === "reverted") {
