@@ -1,4 +1,4 @@
-// ABI for the Factory Contract to create new NFT contracts
+// ABI for the Factory Contract
 export const tokenCreatorABI = [
   {
     anonymous: false,
@@ -52,7 +52,7 @@ export const tokenCreatorABI = [
   },
 ];
 
-// ABI for individual NFT contracts created by the factory
+// ABI for individual NFT contracts created by the factory contract
 export const singleNFTABI = [
   {
     inputs: [],
@@ -126,5 +126,5 @@ export const singleNFTABI = [
   },
 ];
 
-// Address of the factory contract on Monad Testnet
-export const factoryAddress = "0x55Bb2f254ADB29f79237AAD83c512039A84729f2"; // Replace with the actual deployed factory contract address
+// Address of the factory contract
+export const factoryAddress = "0x55Bb2f254ADB29f79237AAD83c512039A84729f2"; 
