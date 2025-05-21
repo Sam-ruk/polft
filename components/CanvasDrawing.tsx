@@ -41,6 +41,29 @@ export const CanvasDrawing = ({ setCanvasImage, setCanvasSize }: CanvasDrawingPr
     []
   );
 
+  // Function to redraw the main canvas (background + drawings)
+  const redrawMainCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Draw background
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (bgImage) {
+      ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+    }
+
+    // Draw existing drawings from drawing canvas
+    const drawingCanvas = drawingCanvasRef.current;
+    if (drawingCanvas) {
+      ctx.drawImage(drawingCanvas, 0, 0);
+    }
+
+    debouncedSetCanvasImage(canvas.toDataURL("image/png", 0.7));
+  }, [bgColor, bgImage, debouncedSetCanvasImage]);
+
   // Update canvas size based on container width
   const updateCanvasSize = useCallback(() => {
     const container = containerRef.current;
@@ -59,41 +82,43 @@ export const CanvasDrawing = ({ setCanvasImage, setCanvasSize }: CanvasDrawingPr
     const drawingCanvas = drawingCanvasRef.current;
     if (!canvas || !drawingCanvas) return;
 
+    // Create a temporary canvas to preserve drawings
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = drawingCanvas.width;
+    tempCanvas.height = drawingCanvas.height;
+    const tempCtx = tempCanvas.getContext("2d");
+    if (tempCtx) {
+      tempCtx.drawImage(drawingCanvas, 0, 0);
+    }
+
     // Update canvas dimensions
     canvas.width = newSize;
     canvas.height = newSize;
     drawingCanvas.width = newSize;
     drawingCanvas.height = newSize;
 
-    // Redraw content
-    const ctx = canvas.getContext("2d");
+    // Restore drawings to resized drawing canvas
     const drawingCtx = drawingCanvas.getContext("2d");
-    if (!ctx || !drawingCtx) return;
-
-    // Redraw background
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    if (bgImage) {
-      ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+    if (drawingCtx && tempCtx) {
+      drawingCtx.drawImage(tempCanvas, 0, 0, newSize, newSize);
     }
 
-    // Redraw drawings
-    ctx.drawImage(drawingCanvas, 0, 0);
+    // Update drawing context properties
+    if (drawingCtx) {
+      drawingCtx.strokeStyle = penColor;
+      drawingCtx.lineWidth = penSize;
+      drawingCtx.lineCap = "round";
+      drawingCtx.lineJoin = "round";
+    }
 
-    // Update drawing context
-    drawingCtx.strokeStyle = penColor;
-    drawingCtx.lineWidth = penSize;
-    drawingCtx.lineCap = "round";
-    drawingCtx.lineJoin = "round";
-
-    debouncedSetCanvasImage(canvas.toDataURL("image/png", 0.7));
-  }, [bgColor, bgImage, penColor, penSize, debouncedSetCanvasImage, setCanvasSize]);
+    // Redraw main canvas
+    redrawMainCanvas();
+  }, [penColor, penSize, redrawMainCanvas, setCanvasSize]);
 
   // Initialize canvases and handle resize
   useEffect(() => {
     updateCanvasSize();
 
-    // Debounced resize handler
     const debouncedResize = debounce(updateCanvasSize, 100);
     window.addEventListener("resize", debouncedResize);
 
@@ -104,7 +129,7 @@ export const CanvasDrawing = ({ setCanvasImage, setCanvasSize }: CanvasDrawingPr
     };
   }, [updateCanvasSize, debouncedSetCanvasImage]);
 
-  // Update pen properties
+  // Update pen properties for future strokes
   useEffect(() => {
     const drawingCanvas = drawingCanvasRef.current;
     if (!drawingCanvas) return;
@@ -113,7 +138,14 @@ export const CanvasDrawing = ({ setCanvasImage, setCanvasSize }: CanvasDrawingPr
 
     ctx.strokeStyle = penColor;
     ctx.lineWidth = penSize;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
   }, [penColor, penSize]);
+
+  // Update main canvas when background changes
+  useEffect(() => {
+    redrawMainCanvas();
+  }, [bgColor, bgImage, redrawMainCanvas]);
 
   // Drawing handlers
   const startDrawing = useCallback(
@@ -123,7 +155,6 @@ export const CanvasDrawing = ({ setCanvasImage, setCanvasSize }: CanvasDrawingPr
       const ctx = drawingCanvas.getContext("2d");
       if (!ctx) return;
 
-      // Prevent default scrolling for touch events
       if ("touches" in e) {
         e.preventDefault();
       }
@@ -132,22 +163,8 @@ export const CanvasDrawing = ({ setCanvasImage, setCanvasSize }: CanvasDrawingPr
       const pos = getEventPosition(e, drawingCanvas);
       ctx.beginPath();
       ctx.moveTo(pos.x, pos.y);
-
-      // Redraw on main canvas
-      const canvas = canvasRef.current;
-      if (canvas) {
-        const mainCtx = canvas.getContext("2d");
-        if (mainCtx) {
-          mainCtx.fillStyle = bgColor;
-          mainCtx.fillRect(0, 0, canvas.width, canvas.height);
-          if (bgImage) {
-            mainCtx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
-          }
-          mainCtx.drawImage(drawingCanvas, 0, 0);
-        }
-      }
     },
-    [bgColor, bgImage]
+    []
   );
 
   const draw = useCallback(
@@ -158,7 +175,6 @@ export const CanvasDrawing = ({ setCanvasImage, setCanvasSize }: CanvasDrawingPr
       const ctx = drawingCanvas.getContext("2d");
       if (!ctx) return;
 
-      // Prevent default scrolling for touch events
       if ("touches" in e) {
         e.preventDefault();
       }
@@ -167,31 +183,16 @@ export const CanvasDrawing = ({ setCanvasImage, setCanvasSize }: CanvasDrawingPr
       ctx.lineTo(pos.x, pos.y);
       ctx.stroke();
 
-      // Redraw on main canvas
-      const canvas = canvasRef.current;
-      if (canvas) {
-        const mainCtx = canvas.getContext("2d");
-        if (mainCtx) {
-          mainCtx.fillStyle = bgColor;
-          mainCtx.fillRect(0, 0, canvas.width, canvas.height);
-          if (bgImage) {
-            mainCtx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
-          }
-          mainCtx.drawImage(drawingCanvas, 0, 0);
-          debouncedSetCanvasImage(canvas.toDataURL("image/png", 0.7));
-        }
-      }
+      // Update main canvas
+      redrawMainCanvas();
     },
-    [isDrawing, bgColor, bgImage, debouncedSetCanvasImage]
+    [isDrawing, redrawMainCanvas]
   );
 
   const stopDrawing = useCallback(() => {
     setIsDrawing(false);
-    const canvas = canvasRef.current;
-    if (canvas) {
-      debouncedSetCanvasImage(canvas.toDataURL("image/png", 0.7));
-    }
-  }, [debouncedSetCanvasImage]);
+    redrawMainCanvas();
+  }, [redrawMainCanvas]);
 
   const getEventPosition = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect();
@@ -216,23 +217,8 @@ export const CanvasDrawing = ({ setCanvasImage, setCanvasSize }: CanvasDrawingPr
     const drawingCtx = drawingCanvas.getContext("2d");
     if (!drawingCtx) return;
 
-    // Clear the drawing canvas
     drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-
-    // Redraw background on main canvas
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.fillStyle = bgColor;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        if (bgImage) {
-          ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
-        }
-        debouncedSetCanvasImage(canvas.toDataURL("image/png", 0.7));
-        console.log("Canvas cleared, reset to:", { bgColor, bgImage });
-      }
-    }
+    redrawMainCanvas();
     setError(null);
   };
 
