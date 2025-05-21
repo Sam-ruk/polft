@@ -13,13 +13,13 @@ const userSchema = new mongoose.Schema({
   bought: [{ type: String }],
 });
 
-// const pollSchema = new mongoose.Schema({
-//   ca: { type: String, required: true },
-//   Q: { type: String, required: true },
-//   Ans: [{ option: String, count: Number }],
-//   time: { type: Date, required: true },
-//   voted: [{ type: String }],
-// });
+const pollSchema = new mongoose.Schema({
+  ca: { type: String, required: true },
+  Q: { type: String, required: true },
+  Ans: [{ option: String, count: Number }],
+  time: { type: Date, required: true },
+  voted: [{ type: String }],
+});
 
 const nftSchema = new mongoose.Schema({
   ca: { type: String, required: true, unique: true },
