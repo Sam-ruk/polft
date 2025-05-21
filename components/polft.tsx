@@ -32,7 +32,7 @@ export const PolFT = () => {
         setWalletError("Failed to connect wallet.");
         console.error("Wallet connection error:", errorMessage);
       } finally {
-       ,KRIsConnecting(false);
+        setIsConnecting(false); 
       }
     }
     if (isConnected && chainId !== targetChainId) {
@@ -63,12 +63,11 @@ export const PolFT = () => {
       console.error("composeCast action not available");
       return;
     }
-    // Limit embeds to 0, 1, or 2 items to match [] | [string] | [string, string]
     const limitedEmbeds = cast.embeds.length > 2 ? cast.embeds.slice(0, 2) : cast.embeds;
     actions
       .composeCast({
-        text: cast.text, // Use 'text' instead of 'content'
-        embeds: limitedEmbeds as [] | [string] | [string, string], // Type assertion for Farcaster
+        text: cast.text,
+        embeds: limitedEmbeds as [] | [string] | [string, string],
       })
       .catch((err: unknown) => {
         const errorMessage = err instanceof Error ? err.message : String(err);
@@ -115,10 +114,10 @@ export const PolFT = () => {
   const handleShareCast = () => {
     setAddFrameStatus(null);
     if (actions?.composeCast) {
-      const embeds: [string] = ["https://polft.vercel.app"]; // Explicitly type as [string]
+      const embeds: [string] = ["https://polft.vercel.app"];
       actions
         .composeCast({
-          text: "Check out PolFT!", // Use 'text' instead of 'content'
+          text: "Check out PolFT!",
           embeds,
         })
         .then(() => {
@@ -148,7 +147,7 @@ export const PolFT = () => {
             fid={fid}
             address={address}
             addFrame={actions?.addFrame}
-            composeCast={handleComposeCast} // Use wrapper function
+            composeCast={handleComposeCast}
           />
         );
       case "myNFTs":
