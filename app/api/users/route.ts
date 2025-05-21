@@ -19,10 +19,10 @@ export async function GET(request: Request) {
     return NextResponse.json(user || { fid: fid.toLowerCase(), mine: [], bought: [] }, { status: 200 });
   } catch (error) {
     console.error('Error in GET /api/users.');
-    return NextResponse.json(
-      { error: 'Internal Server Error', details: error.message },
-      { status: 500 }
-    );
+    // return NextResponse.json(
+    //   { error: 'Internal Server Error', details: error.message },
+    //   { status: 500 }
+    // );
   }
 }
 
@@ -47,12 +47,12 @@ export async function POST(request: Request) {
     return NextResponse.json(user, { status: 201 });
   } catch (error) {
     console.error('Error in POST /api/users.');
-    if (error.code === 11000) {
-      return NextResponse.json({ error: 'User with this fid already exists' }, { status: 409 });
-    }
-    return NextResponse.json(
-      { error: 'Internal Server Error', details: error.message },
-      { status: 500 }
-    );
+    // if (error.code === 11000) {
+    //   return NextResponse.json({ error: 'User with this fid already exists' }, { status: 409 });
+    // }
+    // return NextResponse.json(
+    //   { error: 'Internal Server Error', details: error.message },
+    //   { status: 500 }
+    // );
   }
 }
