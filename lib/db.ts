@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_URI: string = process.env.MONGODB_URI ?? '';
 
 if (!MONGODB_URI) {
   console.error('MONGODB_URI is not defined in .env.local');
@@ -44,7 +44,7 @@ export async function connectDB() {
       authSource: 'admin',
     });
     console.log('Connected to MongoDB:', MONGODB_URI.replace(/:[^@]+@/, ':****@'));
-  } catch (error) {
+  } catch (error: any) {
     console.error('MongoDB connection error:', error.message, error.stack);
     throw error;
   }
