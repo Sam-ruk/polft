@@ -28,7 +28,7 @@ const nftSchema = new mongoose.Schema({
 });
 
 export const User = mongoose.models.User || mongoose.model('User', userSchema);
-// export const Poll = mongoose.models.Poll || mongoose.model('Poll', pollSchema);
+export const Poll = mongoose.models.Poll || mongoose.model('Poll', pollSchema);
 export const NFT = mongoose.models.NFT || mongoose.model('NFT', nftSchema);
 
 export async function connectDB() {
