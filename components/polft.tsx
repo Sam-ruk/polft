@@ -32,7 +32,7 @@ export const PolFT = () => {
         setWalletError("Failed to connect wallet.");
         console.error("Wallet connection error:", errorMessage);
       } finally {
-        setIsConnecting(false); 
+        setIsConnecting(false);
       }
     }
     if (isConnected && chainId !== targetChainId) {
@@ -196,7 +196,7 @@ export const PolFT = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#d9a8ff]">
+    <div className="min-h-screen bg-[#d9a8ff] overflow-x-hidden">
       <div className="fixed top-0 left-0 w-full bg-[#d9a8ff] z-10 shadow-md">
         <div className="max-w-5xl mx-auto px-2 sm:px-4 py-2 flex items-center gap-1.5 overflow-x-auto">
           <div className="flex-shrink-0">
