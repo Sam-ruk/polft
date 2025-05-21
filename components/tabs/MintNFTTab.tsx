@@ -9,7 +9,7 @@ import { parseEther } from "viem";
 import { createPublicClient, http } from "viem";
 import { ethers } from "ethers";
 
-// Custom hook to fetch NFT details
+// Fetch NFT details
 const useNFTDetails = (contractAddress: string, enabled: boolean) => {
   const isValidAddress = ethers.isAddress(contractAddress);
 
