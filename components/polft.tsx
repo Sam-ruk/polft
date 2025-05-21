@@ -27,9 +27,10 @@ export const PolFT = () => {
       setWalletError(null);
       try {
         connect({ connector: farcasterFrame() });
-      } catch (err: any) {
-        setWalletError(`Failed to connect wallet.`);
-        console.error("Wallet connection error:", err);
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        setWalletError("Failed to connect wallet.");
+        console.error("Wallet connection error:", errorMessage);
       } finally {
         setIsConnecting(false);
       }
@@ -37,9 +38,10 @@ export const PolFT = () => {
     if (isConnected && chainId !== targetChainId) {
       try {
         switchChain({ chainId: targetChainId });
-      } catch (err: any) {
-        setWalletError(`Failed to switch to Monad Testnet.`);
-        console.error("Chain switch error:", err);
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        setWalletError("Failed to switch to Monad Testnet.");
+        console.error("Chain switch error:", errorMessage);
       }
     }
   }, [isConnected, chainId, activeTab, isEthProviderAvailable, connect, switchChain]);
@@ -47,12 +49,32 @@ export const PolFT = () => {
   // Auto-sign-in with Farcaster
   useEffect(() => {
     if (!context?.user?.fid && actions) {
-      actions.signIn({ nonce: "1201" }).catch((err) => {
-        console.error("Auto sign-in failed:", err);
+      actions.signIn({ nonce: "1201" }).catch((err: unknown) => {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.error("Auto sign-in failed:", errorMessage);
         setWalletError("Failed to authenticate with Farcaster. Check Warpcast settings.");
       });
     }
   }, [context, actions]);
+
+  // Wrapper for composeCast to match MintNFTTab's expected type
+  const handleComposeCast = (cast: { text: string; embeds: string[] }) => {
+    if (!actions?.composeCast) {
+      console.error("composeCast action not available");
+      return;
+    }
+    // Limit embeds to 0, 1, or 2 items to match [] | [string] | [string, string]
+    const limitedEmbeds = cast.embeds.length > 2 ? cast.embeds.slice(0, 2) : cast.embeds;
+    actions
+      .composeCast({
+        content: cast.text, // Map 'text' to 'content'
+        embeds: limitedEmbeds as [] | [string] | [string, string], // Type assertion for Farcaster
+      })
+      .catch((err: unknown) => {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.error("Failed to compose cast:", errorMessage);
+      });
+  };
 
   const handleAddFrame = async () => {
     setAddFrameStatus(null);
@@ -76,14 +98,16 @@ export const PolFT = () => {
       await actions.addFrame();
       setAddFrameStatus("Miniapp saved to favorites!");
       setTimeout(() => setAddFrameStatus(null), 3000);
-    } catch (error: any) {
-      console.error("Failed to save miniapp:", error.message, error.stack);
-      if (error.message.includes("AddFrame.InvalidDomainManifest")) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      console.error("Failed to save miniapp:", errorMessage, errorStack);
+      if (errorMessage.includes("AddFrame.InvalidDomainManifest")) {
         setAddFrameStatus(
           "Cannot save miniapp due to domain configuration issue. Try sharing the app URL in Warpcast instead."
         );
       } else {
-        setAddFrameStatus(`Failed to save miniapp: ${error.message || "Unknown error"}.`);
+        setAddFrameStatus(`Failed to save miniapp: ${errorMessage || "Unknown error"}.`);
       }
     }
   };
@@ -91,17 +115,19 @@ export const PolFT = () => {
   const handleShareCast = () => {
     setAddFrameStatus(null);
     if (actions?.composeCast) {
+      const embeds: [string] = ["https://polft.vercel.app"]; // Explicitly type as [string]
       actions
         .composeCast({
-          text: "Check out PolFT!",
-          embeds: ["https://polft.vercel.app"],
+          content: "Check out PolFT!", // Use 'content' for Farcaster
+          embeds,
         })
         .then(() => {
           setAddFrameStatus("App shared to Warpcast!");
           setTimeout(() => setAddFrameStatus(null), 3000);
         })
-        .catch((err) => {
-          console.error("Failed to compose cast:", err);
+        .catch((err: unknown) => {
+          const errorMessage = err instanceof Error ? err.message : String(err);
+          console.error("Failed to compose cast:", errorMessage);
           setAddFrameStatus("Failed to share miniapp. Please try again.");
         });
     } else {
@@ -117,7 +143,14 @@ export const PolFT = () => {
     const fid = context?.user?.fid?.toString() || "";
     switch (activeTab) {
       case "mintNFT":
-        return <MintNFTTab fid={fid} address={address} addFrame={actions?.addFrame} composeCast={actions?.composeCast} />;
+        return (
+          <MintNFTTab
+            fid={fid}
+            address={address}
+            addFrame={actions?.addFrame}
+            composeCast={handleComposeCast} // Use wrapper function
+          />
+        );
       case "myNFTs":
         return <MyNFTsTab fid={fid} />;
       case "purchasedNFTs":
