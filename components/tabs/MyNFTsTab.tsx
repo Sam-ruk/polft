@@ -70,7 +70,7 @@ export const MyNFTsTab = ({ fid, onCreatePoll }: MyNFTsTabProps) => {
         ) : error ? (
           <p className="text-center text-red-500 text-lg">{error}</p>
         ) : nfts.length === 0 ? (
-          <p className="text-center text-gray-600 text-lg">You haven't minted any NFTs yet.</p>
+          <p className="text-center text-gray-600 text-lg">You have not minted any NFTs yet.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {nfts.map((nft) => (
