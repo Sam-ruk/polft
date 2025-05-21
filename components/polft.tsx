@@ -57,7 +57,7 @@ export const PolFT = () => {
     }
   }, [context, actions]);
 
-  // Wrapper for composeCast to match MintNFTTab's expected type
+  // Wrapper for composeCast to match MintNFTTab's type
   const handleComposeCast = (cast: { text: string; embeds: string[] }) => {
     if (!actions?.composeCast) {
       console.error("composeCast action not available");
