@@ -9,6 +9,94 @@ import { parseEther } from "viem";
 import { createPublicClient, http } from "viem";
 import { ethers } from "ethers";
 
+// Custom hook to fetch NFT details
+const useNFTDetails = (contractAddress: string, enabled: boolean) => {
+  const isValidAddress = ethers.isAddress(contractAddress);
+
+  const { data: name, error: nameError } = useReadContract({
+    address: isValidAddress ? (contractAddress as `0x${string}`) : undefined,
+    abi: singleNFTABI,
+    functionName: "name",
+    query: { enabled: enabled && isValidAddress },
+  });
+
+  const { data: mintPrice, error: mintPriceError } = useReadContract({
+    address: isValidAddress ? (contractAddress as `0x${string}`) : undefined,
+    abi: singleNFTABI,
+    functionName: "mintPrice",
+    query: { enabled: enabled && isValidAddress },
+  });
+
+  const { data: totalSupply, error: totalSupplyError } = useReadContract({
+    address: isValidAddress ? (contractAddress as `0x${string}`) : undefined,
+    abi: singleNFTABI,
+    functionName: "totalSupply",
+    query: { enabled: enabled && isValidAddress },
+  });
+
+  const { data: mintedCount, error: mintedCountError } = useReadContract({
+    address: isValidAddress ? (contractAddress as `0x${string}`) : undefined,
+    abi: singleNFTABI,
+    functionName: "mintedCount",
+    query: { enabled: enabled && isValidAddress },
+  });
+
+  const { data: metadataURI, error: metadataURIError } = useReadContract({
+    address: isValidAddress ? (contractAddress as `0x${string}`) : undefined,
+    abi: singleNFTABI,
+    functionName: "metadataURI",
+    query: { enabled: enabled && isValidAddress },
+  });
+
+  const [image, setImage] = useState<string | undefined>(undefined);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchMetadata = async () => {
+      if (metadataURI) {
+        try {
+          const metadataResponse = await fetch(metadataURI as string);
+          if (!metadataResponse.ok) throw new Error("Failed to fetch metadata");
+          const metadata = await metadataResponse.json();
+          setImage(metadata.image);
+        } catch (error: any) {
+          setFetchError("Failed to fetch metadata");
+        }
+      }
+    };
+    fetchMetadata();
+  }, [metadataURI]);
+
+  const isSoldOut =
+    mintedCount && totalSupply ? Number(mintedCount) >= Number(totalSupply) : false;
+
+  return {
+    name: name as string | undefined,
+    mintPrice: mintPrice ? ethers.formatEther(mintPrice as bigint) : undefined,
+    totalSupply: totalSupply?.toString(),
+    mintedCount: mintedCount?.toString(),
+    metadataURI: metadataURI as string | undefined,
+    image,
+    isSoldOut,
+    error:
+      nameError ||
+      mintPriceError ||
+      totalSupplyError ||
+      mintedCountError ||
+      metadataURIError ||
+      fetchError,
+    isLoading:
+      enabled &&
+      isValidAddress &&
+      !name &&
+      !mintPrice &&
+      !totalSupply &&
+      !mintedCount &&
+      !metadataURI &&
+      !fetchError,
+  };
+};
+
 interface MintNFTTabProps {
   fid: string;
   address: string | undefined;
@@ -39,61 +127,29 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
     metadataUrl: string;
   } | null>(null);
   const [mintContractAddress, setMintContractAddress] = useState<string>("");
-  const [mintDetails, setMintDetails] = useState<{
-    name: string;
-    mintPrice: string;
-    totalSupply: string;
-    mintedCount: string;
-    metadataURI: string;
-    image: string;
-    isSoldOut: boolean;
-  } | null>(null);
   const [mintError, setMintError] = useState<string | null>(null);
   const [isMintLoading, setIsMintLoading] = useState(false);
   const [priceError, setPriceError] = useState("");
   const [supplyError, setSupplyError] = useState("");
+
+  // Fetch NFT details using custom hook
+  const {
+    name: mintName,
+    mintPrice,
+    totalSupply: mintTotalSupply,
+    mintedCount,
+    metadataURI,
+    image: mintImage,
+    isSoldOut,
+    error: nftDetailsError,
+    isLoading: nftDetailsLoading,
+  } = useNFTDetails(mintContractAddress, isMintDialogOpen);
 
   // Read tokenCount
   const { data: tokenCount, error: tokenCountError } = useReadContract({
     address: factoryAddress,
     abi: tokenCreatorABI,
     functionName: "tokenCount",
-  });
-
-  // Define contract reads for mint details at the top level
-  const { data: nameData, error: nameError } = useReadContract({
-    address: mintContractAddress as `0x${string}`,
-    abi: singleNFTABI,
-    functionName: "name",
-    query: { enabled: !!mintContractAddress && ethers.isAddress(mintContractAddress) },
-  });
-
-  const { data: mintPriceData, error: mintPriceError } = useReadContract({
-    address: mintContractAddress as `0x${string}`,
-    abi: singleNFTABI,
-    functionName: "mintPrice",
-    query: { enabled: !!mintContractAddress && ethers.isAddress(mintContractAddress) },
-  });
-
-  const { data: totalSupplyData, error: totalSupplyError } = useReadContract({
-    address: mintContractAddress as `0x${string}`,
-    abi: singleNFTABI,
-    functionName: "totalSupply",
-    query: { enabled: !!mintContractAddress && ethers.isAddress(mintContractAddress) },
-  });
-
-  const { data: mintedCountData, error: mintedCountError } = useReadContract({
-    address: mintContractAddress as `0x${string}`,
-    abi: singleNFTABI,
-    functionName: "mintedCount",
-    query: { enabled: !!mintContractAddress && ethers.isAddress(mintContractAddress) },
-  });
-
-  const { data: metadataURIData, error: metadataURIError } = useReadContract({
-    address: mintContractAddress as `0x${string}`,
-    abi: singleNFTABI,
-    functionName: "metadataURI",
-    query: { enabled: !!mintContractAddress && ethers.isAddress(mintContractAddress) },
   });
 
   // Write createToken
@@ -109,15 +165,42 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
     }
   }, []);
 
+  // Update mintDetails when data is fetched
+  useEffect(() => {
+    if (mintName && mintPrice && mintTotalSupply && mintedCount && metadataURI && !nftDetailsError) {
+      setMintDetails({
+        name: mintName,
+        mintPrice,
+        totalSupply: mintTotalSupply,
+        mintedCount,
+        metadataURI,
+        image: mintImage || "",
+        isSoldOut: isSoldOut || false,
+      });
+    } else if (nftDetailsError) {
+      setMintError("Failed to load NFT details.");
+    }
+  }, [mintName, mintPrice, mintTotalSupply, mintedCount, metadataURI, mintImage, isSoldOut, nftDetailsError]);
+
+  const [mintDetails, setMintDetails] = useState<{
+    name: string;
+    mintPrice: string;
+    totalSupply: string;
+    mintedCount: string;
+    metadataURI: string;
+    image: string;
+    isSoldOut: boolean;
+  } | null>(null);
+
   const handleConnectWallet = () => {
     try {
       connect({ connector: farcasterFrame() });
     } catch (err: any) {
-      setError(`Failed to connect wallet.`);
+      setError("Failed to connect wallet.");
     }
   };
 
-  const handleLoadMintDetails = async () => {
+  const handleLoadMintDetails = useCallback(() => {
     if (!address) {
       setMintError("Please connect wallet first");
       return;
@@ -126,44 +209,11 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
       setMintError("Invalid contract address");
       return;
     }
-
     setIsMintLoading(true);
     setMintError(null);
-    setMintDetails(null);
-
-    try {
-      // Check for errors from contract reads
-      if (nameError || mintPriceError || totalSupplyError || mintedCountError || metadataURIError) {
-        throw new Error("Failed to fetch contract data");
-      }
-
-      // Ensure all data is available
-      if (!nameData || !mintPriceData || !totalSupplyData || !mintedCountData || !metadataURIData) {
-        throw new Error("Incomplete contract data");
-      }
-
-      // Fetch metadata
-      const metadataResponse = await fetch(metadataURIData as string);
-      if (!metadataResponse.ok) throw new Error("Failed to fetch metadata");
-      const metadata = await metadataResponse.json();
-
-      const isSoldOut = Number(mintedCountData) >= Number(totalSupplyData);
-      setMintDetails({
-        name: nameData as string,
-        mintPrice: ethers.formatEther(mintPriceData as bigint),
-        totalSupply: totalSupplyData.toString(),
-        mintedCount: mintedCountData.toString(),
-        metadataURI: metadataURIData as string,
-        image: metadata.image,
-        isSoldOut,
-      });
-    } catch (error: any) {
-      setMintError(`Failed to load NFT details.`);
-      console.error("Load details error:", error);
-    } finally {
-      setIsMintLoading(false);
-    }
-  };
+    // Data fetching is handled by useNFTDetails hook
+    setIsMintLoading(false);
+  }, [address, mintContractAddress]);
 
   const handleMintNFTFromDialog = async () => {
     if (!address) {
@@ -179,15 +229,17 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
     setMintError(null);
 
     try {
-      if (mintPriceError || !mintPriceData) {
-        throw new Error("Failed to fetch mint price");
-      }
+      const { data: mintPrice } = await useReadContract({
+        address: mintContractAddress as `0x${string}`,
+        abi: singleNFTABI,
+        functionName: "mintPrice",
+      });
 
       const txHash = await writeContractAsync({
         address: mintContractAddress as `0x${string}`,
         abi: singleNFTABI,
         functionName: "mint",
-        value: mintPriceData as bigint,
+        value: mintPrice as bigint,
       });
 
       const publicClient = createPublicClient({
@@ -217,7 +269,7 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
 
       if (!receipt) {
         throw new Error(
-          `Mint transaction receipt not found after ${maxRetries} retries. Check: https://explorer.testnet.monad.xyz/tx/${txHash}`,
+          `Mint transaction receipt not found after ${maxRetries} retries. Check: https://explorer.testnet.monad.xyz/tx/${txHash}`
         );
       }
       if (receipt.status === "reverted") {
@@ -231,17 +283,275 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
               mintedCount: (parseInt(prev.mintedCount) + 1).toString(),
               isSoldOut: parseInt(prev.mintedCount) + 1 >= parseInt(prev.totalSupply),
             }
-          : null,
+          : null
       );
       alert("NFT minted successfully!");
     } catch (error: any) {
-      setMintError(`Failed to mint NFT.`);
+      setMintError("Failed to mint NFT.");
       console.error("Mint NFT error:", error);
     } finally {
       setIsMintLoading(false);
     }
   };
-  
+
+  const handleMintNFT = async () => {
+    if (isLoading) return;
+    if (!fid) {
+      setError("User not authenticated. Please sign in with Farcaster.");
+      return;
+    }
+    if (!address) {
+      setError("Please connect your Farcaster custody wallet.");
+      return;
+    }
+    if (!canvasImage) {
+      setError("Please draw an image to mint.");
+      return;
+    }
+    if (!name || !symbol || !price || !totalSupply) {
+      setError("Please enter name, symbol, price, and total supply for your NFT.");
+      return;
+    }
+
+    if (!price || isNaN(Number(price)) || parseFloat(price) <= 0) {
+      setError("Invalid price");
+      return;
+    }
+    if (!totalSupply || isNaN(Number(totalSupply)) || parseInt(totalSupply) < 2) {
+      setError("Invalid total supply");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const priceInWei = parseEther(price);
+      const totalSupplyNum = parseInt(totalSupply);
+      if (isNaN(totalSupplyNum) || totalSupplyNum <= 0) {
+        throw new Error("Total supply must be a positive number.");
+      }
+      if (name.trim() === "" || symbol.trim() === "") {
+        throw new Error("Name and symbol cannot be empty.");
+      }
+      if (name.length > 32 || symbol.length > 32) {
+        throw new Error("Name and symbol must be 32 characters or less.");
+      }
+      if (priceInWei <= 0) {
+        throw new Error("Mint price must be greater than 0.");
+      }
+
+      console.log("Inputs:", {
+        name,
+        symbol,
+        price,
+        priceInWei: priceInWei.toString(),
+        totalSupply,
+        totalSupplyNum,
+      });
+
+      // Upload image to Pinata
+      const formData = new FormData();
+      const blob = await (await fetch(canvasImage)).blob();
+      formData.append("file", blob, "nft.png");
+
+      const pinataResponse = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_PINATA_JWT}`,
+        },
+        body: formData,
+      });
+      if (!pinataResponse.ok) throw new Error("Failed to upload image to Pinata.");
+      const pinataData = await pinataResponse.json();
+      const imageUrl = `https://gateway.pinata.cloud/ipfs/${pinataData.IpfsHash}`;
+      console.log("Image URL:", imageUrl);
+
+      // Upload metadata to Pinata
+      const metadata = { name, image: imageUrl, price };
+      const metadataResponse = await fetch("https://api.pinata.cloud/pinning/pinJSONToIPFS", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_PINATA_JWT}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(metadata),
+      });
+      if (!metadataResponse.ok) throw new Error("Failed to upload metadata to Pinata.");
+      const metadataData = await metadataResponse.json();
+      const metadataUrl = `https://gateway.pinata.cloud/ipfs/${metadataData.IpfsHash}`;
+      console.log("Metadata URL:", metadataUrl);
+
+      // Check tokenCount
+      if (tokenCountError) {
+        throw new Error(`Failed to fetch tokenCount: ${tokenCountError.message}`);
+      }
+      console.log("Current token count:", tokenCount?.toString());
+
+      // Estimate gas
+      const publicClient = createPublicClient({
+        chain: {
+          id: 10143,
+          name: "Monad Testnet",
+          rpcUrls: { default: { http: ["https://testnet-rpc.monad.xyz"] } },
+          nativeCurrency: { name: "MONAD", symbol: "MONAD", decimals: 18 },
+          blockExplorers: { default: { name: "Monad Explorer", url: "https://explorer.testnet.monad.xyz" } },
+        },
+        transport: http("https://testnet-rpc.monad.xyz", { timeout: 30000 }),
+      });
+
+      const estimatedGas = await publicClient.estimateContractGas({
+        address: factoryAddress,
+        abi: tokenCreatorABI,
+        functionName: "createToken",
+        args: [name, symbol, metadataUrl, priceInWei, totalSupplyNum],
+        account: address as `0x${string}`,
+      });
+
+      // Call createToken
+      const txHash = await writeContractAsync({
+        address: factoryAddress,
+        abi: tokenCreatorABI,
+        functionName: "createToken",
+        args: [name, symbol, metadataUrl, priceInWei, totalSupplyNum],
+        gas: (estimatedGas * BigInt(12)) / BigInt(10), // 20% buffer
+      });
+      console.log("Transaction sent:", txHash);
+
+      // Wait for transaction receipt
+      let receipt = null;
+      const maxRetries = 10;
+      const retryDelay = 3000;
+      for (let i = 0; i < maxRetries; i++) {
+        try {
+          receipt = await publicClient.getTransactionReceipt({ hash: txHash });
+          if (receipt) break;
+          console.log(`Receipt not found, retrying (${i + 1}/${maxRetries})...`);
+          await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        } catch (err) {
+          console.log(`Retry ${i + 1} failed:`, err);
+        }
+      }
+      if (!receipt) {
+        throw new Error(
+          `Transaction receipt not found after ${maxRetries} retries. Check: https://explorer.testnet.monad.xyz/tx/${txHash}`
+        );
+      }
+      console.log("Fetched receipt:", receipt);
+
+      if (receipt.status === "reverted") {
+        throw new Error("Transaction reverted. Check contract logs or increase gas.");
+      }
+
+      // Parse TokenCreated event
+      const event = receipt.logs
+        .map((log) => {
+          try {
+            const iface = new ethers.Interface(tokenCreatorABI);
+            return iface.parseLog(log);
+          } catch {
+            return null;
+          }
+        })
+        .find((e) => e?.name === "TokenCreated");
+      if (!event) throw new Error("TokenCreated event not found.");
+      const newContractAddress = event.args.contractAddress;
+      console.log("New NFT contract address:", newContractAddress);
+
+      // Save NFT to database
+      const nftResponse = await fetch("/api/nfts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ca: newContractAddress,
+          uri: metadataUrl,
+          name,
+          fid,
+        }),
+      });
+      if (!nftResponse.ok) {
+        const errorData = await nftResponse.json();
+        throw new Error("Failed to save NFT to database.");
+      }
+      console.log("NFT saved to database:", await nftResponse.json());
+
+      // Update user
+      const userResponse = await fetch(`/api/users?fid=${fid}`);
+      if (!userResponse.ok) {
+        throw new Error("Failed to fetch user data");
+      }
+      const userData = await userResponse.json();
+      const updatedMine = [...(userData.mine || []), newContractAddress];
+
+      const updateUserResponse = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fid,
+          mine: updatedMine,
+          bought: userData.bought || [],
+        }),
+      });
+      if (!updateUserResponse.ok) {
+        throw new Error("Failed to update user.");
+      }
+      console.log("User updated with new NFT:", await updateUserResponse.json());
+
+      setNftDetails({
+        name,
+        symbol,
+        price,
+        totalSupply,
+        contractAddress: newContractAddress,
+        transactionHash: txHash,
+        image: imageUrl,
+        metadataUrl,
+      });
+      setIsDialogOpen(true);
+    } catch (err: any) {
+      setError("Failed to create NFT.");
+      console.error("Minting error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCloseDialog = useCallback(() => {
+    setIsDialogOpen(false);
+    setNftDetails(null);
+  }, []);
+
+  const handleCloseMintDialog = useCallback(() => {
+    setIsMintDialogOpen(false);
+    setMintContractAddress("");
+    setMintDetails(null);
+    setMintError(null);
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }, []);
+
+  const handleAddFrame = useCallback(() => {
+    if (addFrame && nftDetails?.metadataUrl) {
+      addFrame();
+      console.log("Frame added with metadata URL:", nftDetails.metadataUrl);
+    } else {
+      console.log("addFrame not available or no metadata URL");
+    }
+  }, [addFrame, nftDetails]);
+
+  const handleComposeCast = useCallback(() => {
+    if (!composeCast || !nftDetails) {
+      console.log("composeCast not available or no NFT details");
+      return;
+    }
+
+    const mintLink = `https://polft.vercel.app`;
+    const castText = `Mint my new meme today!\nCopy CA -> Paste in 🛒 -> Mint!\nName: ${nftDetails.name}\nSymbol: ${nftDetails.symbol}\nPrice: ${nftDetails.price} MON\nTotal Supply: ${nftDetails.totalSupply}\nCA: ${nftDetails.contractAddress}\nMint it here: ${mintLink}`;
+    const embeds = nftDetails.image ? [nftDetails.image] : [nftDetails.metadataUrl];
+
+    composeCast({ text: castText, embeds });
+    console.log("Cast composed:", { text: castText, embeds });
+  }, [composeCast, nftDetails]);
+
   return (
     <div className="flex flex-col items-center gap-4 p-4 sm:p-6 w-full max-w-2xl mx-auto">
       {!address && (
@@ -273,7 +583,7 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
         />
         <input
           type="text"
-          placeholder="Price (MONAD)"
+          placeholder="Price (MON)"
           value={price}
           onChange={(e) => {
             const val = e.target.value;
@@ -290,10 +600,7 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
           }}
           className="p-1.5 border rounded text-xs sm:text-sm w-[50vw] min-w-[80px]"
         />
-        {priceError && (
-          <p className="text-red-500 text-xs mt-1">{priceError}</p>
-        )}
-
+        {priceError && <p className="text-red-500 text-xs mt-1">{priceError}</p>}
         <input
           type="text"
           placeholder="Total Supply"
@@ -314,20 +621,10 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
           }}
           className="p-1.5 border rounded text-xs sm:text-sm w-[50vw] min-w-[80px]"
         />
-        {supplyError && (
-          <p className="text-red-500 text-xs mt-1">{supplyError}</p>
-        )}
-
+        {supplyError && <p className="text-red-500 text-xs mt-1">{supplyError}</p>}
         <button
           onClick={handleMintNFT}
-          disabled={
-            isLoading ||
-            !address ||
-            !!priceError ||
-            !!supplyError ||
-            !price ||
-            !totalSupply
-          }
+          disabled={isLoading || !address || !!priceError || !!supplyError || !price || !totalSupply}
           className={`px-3 py-1.5 sm:px-4 sm:py-2 bg-[#FFD700] text-[#4B0082] font-bold rounded-[15px] border-[2px] sm:border-[3px] border-[#800080] hover:bg-[#FFEC8B] hover:scale-105 active:scale-95 transition-all duration-300 w-[50vw] min-w-[80px] text-xs sm:text-sm ${
             isLoading || !address || !!priceError || !!supplyError || !price || !totalSupply
               ? "opacity-50 cursor-not-allowed"
@@ -336,7 +633,6 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
         >
           {isLoading ? "Creating..." : "Create NFT"}
         </button>
-
         {error && <p className="text-red-500 text-xs w-[50vw] min-w-[80px] text-center">{error}</p>}
       </div>
       {isDialogOpen && nftDetails && (
@@ -375,7 +671,7 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
                       <span className="font-semibold text-[#4B0082]">Symbol:</span> {nftDetails.symbol}
                     </p>
                     <p>
-                      <span className="font-semibold text-[#4B0082]">Price:</span> {nftDetails.price} MONAD
+                      <span className="font-semibold text-[#4B0082]">Price:</span> {nftDetails.price} MON
                     </p>
                     <p>
                       <span className="font-semibold text-[#4B0082]">Total Supply:</span> {nftDetails.totalSupply}
@@ -429,17 +725,17 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
             />
             <button
               onClick={handleLoadMintDetails}
-              disabled={isMintLoading || !address}
+              disabled={isMintLoading || !address || nftDetailsLoading}
               className={`w-full p-3 mb-3 bg-[#FFD700] text-[#4B0082] font-bold rounded-lg border-[2px] border-[#800080] hover:bg-[#FFEC8B] hover:scale-105 active:scale-95 transition-all duration-300 text-sm ${
-                isMintLoading || !address ? "opacity-50 cursor-not-allowed" : ""
+                isMintLoading || !address || nftDetailsLoading ? "opacity-50 cursor-not-allowed" : ""
               }`}
             >
-              {isMintLoading ? "Loading..." : "Load Details"}
+              {nftDetailsLoading ? "Loading..." : "Load Details"}
             </button>
             {mintDetails && (
               <div className="mb-4">
                 <h3 className="text-lg font-semibold text-[#4B0082]">{mintDetails.name}</h3>
-                <p>Mint Price: {mintDetails.mintPrice} MONAD</p>
+                <p>Mint Price: {mintDetails.mintPrice} MON</p>
                 <p>Supply: {mintDetails.mintedCount}/{mintDetails.totalSupply}</p>
                 {mintDetails.image && (
                   <img
