@@ -394,7 +394,7 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
           id: 10143,
           name: "Monad Testnet",
           rpcUrls: { default: { http: ["https://testnet-rpc.monad.xyz"] } },
-          nativeCurrency: { name: "MONAD", symbol: "MONAD", decimals: 18 },
+          nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 },
           blockExplorers: { default: { name: "Monad Explorer", url: "https://explorer.testnet.monad.xyz" } },
         },
         transport: http("https://testnet-rpc.monad.xyz", { timeout: 30000 }),
