@@ -32,7 +32,7 @@ export const PolFT = () => {
         setWalletError("Failed to connect wallet.");
         console.error("Wallet connection error:", errorMessage);
       } finally {
-        setIsConnecting(false);
+       ,KRIsConnecting(false);
       }
     }
     if (isConnected && chainId !== targetChainId) {
@@ -67,7 +67,7 @@ export const PolFT = () => {
     const limitedEmbeds = cast.embeds.length > 2 ? cast.embeds.slice(0, 2) : cast.embeds;
     actions
       .composeCast({
-        content: cast.text, // Map 'text' to 'content'
+        text: cast.text, // Use 'text' instead of 'content'
         embeds: limitedEmbeds as [] | [string] | [string, string], // Type assertion for Farcaster
       })
       .catch((err: unknown) => {
@@ -118,7 +118,7 @@ export const PolFT = () => {
       const embeds: [string] = ["https://polft.vercel.app"]; // Explicitly type as [string]
       actions
         .composeCast({
-          content: "Check out PolFT!", // Use 'content' for Farcaster
+          text: "Check out PolFT!", // Use 'text' instead of 'content'
           embeds,
         })
         .then(() => {
