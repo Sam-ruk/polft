@@ -216,83 +216,83 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
   }, [address, mintContractAddress]);
 
   const handleMintNFTFromDialog = async () => {
-  if (!address) {
-    setMintError("Please connect wallet first");
-    return;
-  }
-  if (!ethers.isAddress(mintContractAddress)) {
-    setMintError("Invalid contract address");
-    return;
-  }
-  if (!mintPrice) {
-    setMintError("Mint price not loaded. Please try again.");
-    return;
-  }
+    if (!address) {
+      setMintError("Please connect wallet first");
+      return;
+    }
+    if (!ethers.isAddress(mintContractAddress)) {
+      setMintError("Invalid contract address");
+      return;
+    }
+    if (!mintPrice) {
+      setMintError("Mint price not loaded. Please try again.");
+      return;
+    }
 
-  setIsMintLoading(true);
-  setMintError(null);
+    setIsMintLoading(true);
+    setMintError(null);
 
-  try {
-    const priceInWei = parseEther(mintPrice); // Convert mintPrice (string) back to Wei
+    try {
+      const priceInWei = parseEther(mintPrice);
 
-    const txHash = await writeContractAsync({
-      address: mintContractAddress as `0x${string}`,
-      abi: singleNFTABI,
-      functionName: "mint",
-      value: priceInWei,
-    });
+      const txHash = await writeContractAsync({
+        address: mintContractAddress as `0x${string}`,
+        abi: singleNFTABI,
+        functionName: "mint",
+        value: priceInWei,
+      });
 
-    const publicClient = createPublicClient({
-      chain: {
-        id: 10143,
-        name: "Monad Testnet",
-        rpcUrls: { default: { http: ["https://testnet-rpc.monad.xyz"] } },
-        nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 }, // Updated to MON
-        blockExplorers: { default: { name: "Monad Explorer", url: "https://explorer.testnet.monad.xyz" } },
-      },
-      transport: http("https://testnet-rpc.monad.xyz", { timeout: 30000 }),
-    });
+      const publicClient = createPublicClient({
+        chain: {
+          id: 10143,
+          name: "Monad Testnet",
+          rpcUrls: { default: { http: ["https://testnet-rpc.monad.xyz"] } },
+          nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 },
+          blockExplorers: { default: { name: "Monad Explorer", url: "https://explorer.testnet.monad.xyz" } },
+        },
+        transport: http("https://testnet-rpc.monad.xyz", { timeout: 30000 }),
+      });
 
-    let receipt = null;
-    const maxRetries = 10;
-    const retryDelay = 3000;
-    for (let i = 0; i < maxRetries; i++) {
-      try {
-        receipt = await publicClient.getTransactionReceipt({ hash: txHash });
-        if (receipt) break;
-        console.log(`Mint receipt not found, retrying (${i + 1}/${maxRetries})...`);
-        await new Promise((resolve) => setTimeout(resolve, retryDelay));
-      } catch (err) {
-        console.log(`Mint retry ${i + 1} failed:`, err);
+      let receipt = null;
+      const maxRetries = 10;
+      const retryDelay = 3000;
+      for (let i = 0; i < maxRetries; i++) {
+        try {
+          receipt = await publicClient.getTransactionReceipt({ hash: txHash });
+          if (receipt) break;
+          console.log(`Mint receipt not found, retrying (${i + 1}/${maxRetries})...`);
+          await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        } catch (err) {
+          console.log(`Mint retry ${i + 1} failed:`, err);
+        }
       }
-    }
 
-    if (!receipt) {
-      throw new Error(
-        `Mint transaction receipt not found after ${maxRetries} retries. Check: https://explorer.testnet.monad.xyz/tx/${txHash}`
+      if (!receipt) {
+        throw new Error(
+          `Mint transaction receipt not found after ${maxRetries} retries. Check: https://explorer.testnet.monad.xyz/tx/${txHash}`
+        );
+      }
+      if (receipt.status === "reverted") {
+        throw new Error("Mint transaction reverted.");
+      }
+
+      setMintDetails((prev) =>
+        prev
+          ? {
+              ...prev,
+              mintedCount: (parseInt(prev.mintedCount) + 1).toString(),
+              isSoldOut: parseInt(prev.mintedCount) + 1 >= parseInt(prev.totalSupply),
+            }
+          : null
       );
+      alert("NFT minted successfully!");
+    } catch (error: any) {
+      setMintError("Failed to mint NFT.");
+      console.error("Mint NFT error:", error);
+    } finally {
+      setIsMintLoading(false);
     }
-    if (receipt.status === "reverted") {
-      throw new Error("Mint transaction reverted.");
-    }
-
-    setMintDetails((prev) =>
-      prev
-        ? {
-            ...prev,
-            mintedCount: (parseInt(prev.mintedCount) + 1).toString(),
-            isSoldOut: parseInt(prev.mintedCount) + 1 >= parseInt(prev.totalSupply),
-          }
-        : null
-    );
-    alert("NFT minted successfully!");
-  } catch (error: any) {
-    setMintError("Failed to mint NFT.");
-    console.error("Mint NFT error:", error);
-  } finally {
-    setIsMintLoading(false);
-  }
-};
+  };
 
   const handleMintNFT = async () => {
     if (isLoading) return;
@@ -544,9 +544,8 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
       return;
     }
 
-    const mintLink = `https://polft.vercel.app`;
-    const castText = `Mint my new meme today!\nCopy CA -> Paste in 🛒 -> Mint!\nName: ${nftDetails.name}\nSymbol: ${nftDetails.symbol}\nPrice: ${nftDetails.price} MON\nTotal Supply: ${nftDetails.totalSupply}\nCA: ${nftDetails.contractAddress}\nMint it here: ${mintLink}`;
-    const embeds = nftDetails.image ? [nftDetails.image] : [nftDetails.metadataUrl];
+    const castText = `Mint my new meme today!\nCopy CA -> Paste in 🛒 -> Mint!\nName: ${nftDetails.name}\nSymbol: ${nftDetails.symbol}\nPrice: ${nftDetails.price} MON\nTotal Supply: ${nftDetails.totalSupply}\nCA: ${nftDetails.contractAddress}`;
+    const embeds = nftDetails.image ? [nftDetails.image, "https://polft.vercel.app"] : ["https://polft.vercel.app"];
 
     composeCast({ text: castText, embeds });
     console.log("Cast composed:", { text: castText, embeds });
