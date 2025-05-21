@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? error.stack : undefined;
 
-    console.error('Error in GET /api/nfts:', errorMessage, errorStack);
+    console.error('Error in GET /api/nfts.');
     return NextResponse.json(
       { error: 'Internal Server Error', details: errorMessage },
       { status: 500 }
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? error.stack : undefined;
 
-    console.error('Error in POST /api/nfts:', errorMessage, errorStack);
+    console.error('Error in POST /api/nfts.');
 
     if (
       error &&
