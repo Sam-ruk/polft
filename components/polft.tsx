@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useMiniAppContext } from "@/hooks/use-miniapp-context";
-import { MintNFTTab } from "./tabs/MintNFTTab";
+import { MintNFTTab } from "./tabs_ode tabs/MintNFTTab";
 import { MyNFTsTab } from "./tabs/MyNFTsTab";
 import { PurchasedNFTsTab } from "./tabs/PurchasedNFTsTab";
 import { useAccount, useConnect, useSwitchChain } from "wagmi";
@@ -198,7 +198,7 @@ export const PolFT = () => {
   return (
     <div className="min-h-screen bg-[#d9a8ff] overflow-x-hidden">
       <div className="fixed top-0 left-0 w-full bg-[#d9a8ff] z-10 shadow-md">
-        <div className="max-w-5xl mx-auto px-2 sm:px-4 py-2 flex items-center gap-1.5 overflow-x-auto">
+        <div className="max-w-5xl mx-auto px-2 sm:px-4 py-2 flex items-center gap-1.5 flex-wrap">
           <div className="flex-shrink-0">
             {context?.user?.fid ? (
               <div className="flex items-center gap-1">
@@ -217,7 +217,7 @@ export const PolFT = () => {
               </p>
             )}
           </div>
-          <div className="flex flex-nowrap gap-0.5">
+          <div className="flex flex-wrap gap-0.5">
             {[
               { id: "mintNFT", label: "🪙 Mint" },
               { id: "myNFTs", label: "🫵" },
