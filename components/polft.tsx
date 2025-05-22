@@ -1,6 +1,5 @@
 "use client";
 
-import { SafeAreaContainer } from "@/components/safe-area-container";
 import { useState, useEffect } from "react";
 import { useMiniAppContext } from "@/hooks/use-miniapp-context";
 import { MintNFTTab } from "./tabs/MintNFTTab";
@@ -8,6 +7,7 @@ import { MyNFTsTab } from "./tabs/MyNFTsTab";
 import { PurchasedNFTsTab } from "./tabs/PurchasedNFTsTab";
 import { useAccount, useConnect, useSwitchChain } from "wagmi";
 import { farcasterFrame } from "@farcaster/frame-wagmi-connector";
+import { SafeAreaContainer } from "@/components/safe-area-container";
 
 export const PolFT = () => {
   const { context, actions, isEthProviderAvailable } = useMiniAppContext();
