@@ -1,6 +1,6 @@
 "use client";
 
-import { SafeAreaContainer } from "./SafeAreaContainer";
+import { SafeAreaContainer } from "./safe-area-container";
 import { useState, useEffect } from "react";
 import { useMiniAppContext } from "@/hooks/use-miniapp-context";
 import { MintNFTTab } from "./tabs/MintNFTTab";
