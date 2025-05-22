@@ -143,12 +143,16 @@ export const PolFT = () => {
     switch (activeTab) {
       case "mintNFT":
         return (
-          <MintNFTTab
-            fid={fid}
-            address={address}
-            addFrame={actions?.addFrame}
-            composeCast={handleComposeCast}
-          />
+          <SafeAreaContainer>
+            <div className="overflow-x-hidden w-full max-w-2xl mx-auto">
+                <MintNFTTab
+                  fid={fid}
+                  address={address}
+                  addFrame={actions?.addFrame}
+                  composeCast={handleComposeCast}
+                />
+            </div>
+          </SafeAreaContainer>
         );
       case "myNFTs":
         return <MyNFTsTab fid={fid} />;
