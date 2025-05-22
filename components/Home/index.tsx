@@ -9,8 +9,10 @@ export default function Home() {
 
   return (
     <div className="overflow-x-hidden">
-      <SafeAreaContainer insets={context?.client.safeAreaInsets} className="overflow-x-hidden">
-        <PolFT />
+      <SafeAreaContainer insets={context?.client.safeAreaInsets}>
+        <div className="overflow-x-hidden">
+          <PolFT />
+        </div>
       </SafeAreaContainer>
     </div>
   );
