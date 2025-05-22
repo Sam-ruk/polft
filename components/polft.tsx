@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useMiniAppContext } from "@/hooks/use-miniapp-context";
-import { MintNFTsTab } from "./tabs_ode tabs/MintNFTsTab";
+import { MintNFTTab } from "./tabs/MintNFTTab";
 import { MyNFTsTab } from "./tabs/MyNFTsTab";
 import { PurchasedNFTsTab } from "./tabs/PurchasedNFTsTab";
 import { useAccount, useConnect, useSwitchChain } from "wagmi";
@@ -57,7 +57,7 @@ export const PolFT = () => {
     }
   }, [context, actions]);
 
-  // Wrapper for composeCast to match MintNFTsTab's type
+  // Wrapper for composeCast to match MintNFTTab's type
   const handleComposeCast = (cast: { text: string; embeds: string[] }) => {
     if (!actions?.composeCast) {
       console.error("composeCast action not available");
@@ -143,7 +143,7 @@ export const PolFT = () => {
     switch (activeTab) {
       case "mintNFT":
         return (
-          <MintNFTsTab
+          <MintNFTTab
             fid={fid}
             address={address}
             addFrame={actions?.addFrame}
