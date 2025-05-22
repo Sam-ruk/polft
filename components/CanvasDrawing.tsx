@@ -626,7 +626,6 @@ export const CanvasDrawing = ({ setCanvasImage, setCanvasSize }: CanvasDrawingPr
             type="text"
             value={textInput}
             onChange={(e) => setTextInput(e.target.value)}
-            onSelectStart={preventTextSelection}
             placeholder="Enter text to add"
             className="p-2 border rounded text-sm select-none"
             disabled={!isTextMode}
