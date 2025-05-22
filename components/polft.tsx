@@ -7,7 +7,6 @@ import { MyNFTsTab } from "./tabs/MyNFTsTab";
 import { PurchasedNFTsTab } from "./tabs/PurchasedNFTsTab";
 import { useAccount, useConnect, useSwitchChain } from "wagmi";
 import { farcasterFrame } from "@farcaster/frame-wagmi-connector";
-import { SafeAreaContainer } from "@/components/safe-area-container";
 
 export const PolFT = () => {
   const { context, actions, isEthProviderAvailable } = useMiniAppContext();
@@ -144,7 +143,6 @@ export const PolFT = () => {
     switch (activeTab) {
       case "mintNFT":
         return (
-          <SafeAreaContainer>
             <div className="overflow-x-hidden w-full max-w-2xl mx-auto">
                 <MintNFTTab
                   fid={fid}
@@ -153,7 +151,6 @@ export const PolFT = () => {
                   composeCast={handleComposeCast}
                 />
             </div>
-          </SafeAreaContainer>
         );
       case "myNFTs":
         return <MyNFTsTab fid={fid} />;
