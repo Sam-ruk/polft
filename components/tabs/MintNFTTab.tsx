@@ -552,7 +552,7 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
   }, [composeCast, nftDetails]);
 
   return (
-    <div className="flex flex-col items-center gap-4 p-4 sm:p-6 w-full max-w-2xl mx-auto">
+    <div className="overflow-x-hidden flex flex-col items-center gap-4 p-4 sm:p-6 w-full max-w-2xl mx-auto">
       {!address && (
         <div className="text-center mb-4">
           <p className="text-red-500 text-sm">Please connect your Farcaster custody wallet to mint NFTs.</p>
