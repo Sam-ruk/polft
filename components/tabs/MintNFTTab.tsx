@@ -664,24 +664,28 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
                   </div>
                   <div className="flex flex-col gap-2 text-sm sm:text-base">
                     <p>
-                      <span className="font-semibold text-[#4B0082]">Name:</span> {nftDetails.name}
+                      <span className="font-semibold text-[#4B0082]">Name:</span>{" "}
+                      <span className="text-black">{nftDetails.name}</span>
                     </p>
                     <p>
-                      <span className="font-semibold text-[#4B0082]">Symbol:</span> {nftDetails.symbol}
+                      <span className="font-semibold text-[#4B0082]">Symbol:</span>{" "}
+                      <span className="text-black">{nftDetails.symbol}</span>
                     </p>
                     <p>
-                      <span className="font-semibold text-[#4B0082]">Price:</span> {nftDetails.price} MON
+                      <span className="font-semibold text-[#4B0082]">Price:</span>{" "}
+                      <span className="text-black">{nftDetails.price} MON</span>
                     </p>
                     <p>
-                      <span className="font-semibold text-[#4B0082]">Total Supply:</span> {nftDetails.totalSupply}
+                      <span className="font-semibold text-[#4B0082]">Total Supply:</span>{" "}
+                      <span className="text-black">{nftDetails.totalSupply}</span>
                     </p>
                     <p className="break-all">
                       <span className="font-semibold text-[#4B0082]">Contract Address:</span>{" "}
-                      {nftDetails.contractAddress}
+                      <span className="text-black">{nftDetails.contractAddress}</span>
                     </p>
                     <p className="break-all">
                       <span className="font-semibold text-[#4B0082]">Transaction Hash:</span>{" "}
-                      {nftDetails.transactionHash}
+                      <span className="text-black">{nftDetails.transactionHash}</span>
                     </p>
                   </div>
                 </div>
