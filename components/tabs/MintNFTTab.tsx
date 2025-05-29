@@ -15,11 +15,11 @@ const monadTestnet = {
   network: "monad-testnet",
   nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 },
   rpcUrls: {
-    default: { http: ["https://testnet-rpc.monad.xyz"] },
+    default: { http: ["https://monad-testnet.g.alchemy.com/v2/kgba2A2om3dyvvOWDkRbB74QvRbhr5uQ"] },
     public: { http: ["https://testnet-rpc.monad.xyz"] },
   },
   blockExplorers: {
-    default: { name: "Monad Explorer", url: "https://explorer.testnet.monad.xyz" },
+    default: { name: "Monad Explorer", url: "https://testnet.monadexplorer.com" },
   },
   testnet: true,
 };
@@ -221,28 +221,8 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
     isSoldOut: boolean;
   } | null>(null);
 
-  const addMonadTestnet = async () => {
-    try {
-      await window.ethereum.request({
-        method: "wallet_addEthereumChain",
-        params: [
-          {
-            chainId: "0x27B7",
-            chainName: "Monad Testnet",
-            nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 },
-            rpcUrls: ["https://testnet-rpc.monad.xyz"],
-            blockExplorerUrls: ["https://explorer.testnet.monad.xyz"],
-          },
-        ],
-      });
-    } catch (err) {
-      console.error("Failed to add Monad Testnet:", err);
-    }
-  };
-
   const handleConnectWallet = async () => {
     try {
-      await addMonadTestnet();
       if (switchChain) {
         await switchChain({ chainId: 10143 });
       }
@@ -301,7 +281,7 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
 
       const publicClient = createPublicClient({
         chain: monadTestnet,
-        transport: http("https://testnet-rpc.monad.xyz", { timeout: 30000 }),
+        transport: http("https://monad-testnet.g.alchemy.com/v2/kgba2A2om3dyvvOWDkRbB74QvRbhr5uQ", { timeout: 30000 }),
       });
 
       let receipt = null;
@@ -312,15 +292,15 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
           receipt = await publicClient.getTransactionReceipt({ hash: txHash });
           if (receipt) break;
           console.log(`Mint receipt not found, retrying (${i + 1}/${maxRetries})...`);
-          await new Promise((resolve) => setTimeout(resolve, retryDelay));
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
         } catch (err) {
-          console.log(`Mint retry ${i + 1} failed:`, err);
+          console.log(`Retry ${i + 1:`, err);
         }
       }
 
       if (!receipt) {
         throw new Error(
-          `Mint transaction receipt not found after ${maxRetries} retries. Check: https://explorer.testnet.monad.xyz/tx/${txHash}`
+          `Mint transaction receipt not found after ${maxRetries} retries. Check: https://testnet.monadexplorer.com/tx/${txHash}`
         );
       }
       if (receipt.status === "reverted") {
@@ -330,10 +310,10 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
       setMintDetails((prev) =>
         prev
           ? {
-              ...prev,
-              mintedCount: (parseInt(prev.mintedCount) + 1).toString(),
-              isSoldOut: parseInt(prev.mintedCount) + 1 >= parseInt(prev.totalSupply),
-            }
+            ...prev,
+            mintedCount: (parseInt(prev.mintedCount) + 1).toString(),
+            isSoldOut: parseInt(prev.mintedCount) + 1 >= parseInt(prev.totalSupply),
+          }
           : null
       );
       alert("NFT minted successfully!");
@@ -450,7 +430,7 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
       // Estimate gas
       const publicClient = createPublicClient({
         chain: monadTestnet,
-        transport: http("https://testnet-rpc.monad.xyz", { timeout: 30000 }),
+        transport: http("https://monad-testnet.g.alchemy.com/v2/kgba2A2om3dyvvOWDkRbB74QvRbhr5uQ", { timeout: 30000 }),
       });
 
       const estimatedGas = await publicClient.estimateContractGas({
@@ -488,7 +468,7 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
       }
       if (!receipt) {
         throw new Error(
-          `Transaction receipt not found after ${maxRetries} retries. Check: https://explorer.testnet.monad.xyz/tx/${txHash}`
+          `Transaction receipt not found after ${maxRetries} retries. Check: https://testnet.monadexplorer.com/tx/${txHash}`
         );
       }
       console.log("Fetched receipt:", receipt);
