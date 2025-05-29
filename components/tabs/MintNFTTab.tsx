@@ -1,9 +1,10 @@
+// components/MintNFTTab.tsx
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
 import { CanvasDrawing } from "../CanvasDrawing";
 import { tokenCreatorABI, factoryAddress, singleNFTABI } from "../../lib/contractABI";
-import { useConnect, useReadContract, useWriteContract, useAccount, useNetwork, useSwitchNetwork } from "wagmi";
+import { useConnect, useReadContract, useWriteContract, useAccount, useChainId, useSwitchChain } from "wagmi";
 import { farcasterFrame } from "@farcaster/frame-wagmi-connector";
 import { parseEther } from "viem";
 import { createPublicClient, http } from "viem";
@@ -121,8 +122,8 @@ interface MintNFTTabProps {
 
 export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabProps) => {
   const { connect } = useConnect();
-  const { chain } = useNetwork();
-  const { switchNetwork } = useSwitchNetwork();
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
   const [canvasImage, setCanvasImage] = useState<string | null>(null);
   const [canvasSize, setCanvasSize] = useState(300);
   const [name, setName] = useState("");
@@ -201,15 +202,15 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
   }, [mintName, mintPrice, mintTotalSupply, mintedCount, metadataURI, mintImage, isSoldOut, nftDetailsError]);
 
   useEffect(() => {
-    if (chain && chain.id !== 10143) {
+    if (chainId !== 10143) {
       setError("Wrong network detected. Please switch to Monad Testnet.");
-      if (switchNetwork) {
-        switchNetwork({ chainId: 10143 });
+      if (switchChain) {
+        switchChain({ chainId: 10143 });
       }
     } else {
       setError(null);
     }
-  }, [chain, switchNetwork]);
+  }, [chainId, switchChain]);
 
   const [mintDetails, setMintDetails] = useState<{
     name: string;
@@ -243,8 +244,8 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
   const handleConnectWallet = async () => {
     try {
       await addMonadTestnet();
-      if (switchNetwork) {
-        await switchNetwork({ chainId: 10143 });
+      if (switchChain) {
+        await switchChain({ chainId: 10143 });
       }
       connect({ connector: farcasterFrame() });
     } catch (err: any) {
@@ -285,8 +286,8 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
     setMintError(null);
 
     try {
-      if (switchNetwork) {
-        await switchNetwork({ chainId: 10143 });
+      if (switchChain) {
+        await switchChain({ chainId: 10143 });
       }
 
       const priceInWei = parseEther(mintPrice);
@@ -381,8 +382,8 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
     setError(null);
 
     try {
-      if (switchNetwork) {
-        await switchNetwork({ chainId: 10143 });
+      if (switchChain) {
+        await switchChain({ chainId: 10143 });
       }
 
       const priceInWei = parseEther(price);
