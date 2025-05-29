@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { useAccount, useWriteContract, useSwitchChain, useChainId } from "wagmi";
+import { useAccount, useWriteContract, useSwitchChain, useChainId, useContractRead } from "wagmi";
 import { createPublicClient, http, parseEther } from "viem";
 import { ethers } from "ethers";
 import { singleNFTABI } from "../../lib/contractABI";
@@ -17,7 +17,7 @@ const monadTestnet = {
     public: { http: ["https://testnet-rpc.monad.xyz"] },
   },
   blockExplorers: {
-    default: { name: "Monad Explorer", url: "https://testnet.monadexplorer.com/" },
+    default: { name: "Monad Explorer", url: "https://testnet.monadexplorer.com" },
   },
   testnet: true,
 };
@@ -25,43 +25,43 @@ const monadTestnet = {
 const useNFTDetails = (contractAddress: string, enabled: boolean) => {
   const isValidAddress = ethers.isAddress(contractAddress);
 
-  const { data: name, error: nameError } = useReadContract({
+  const { data: name, error: nameError } = useContractRead({
     address: isValidAddress ? (contractAddress as `0x${string}`) : undefined,
     abi: singleNFTABI,
     functionName: "name",
-    query: { enabled: enabled && isValidAddress },
+    enabled: enabled && isValidAddress,
     chainId: 10143,
   });
 
-  const { data: mintPrice, error: mintPriceError } = useReadContract({
+  const { data: mintPrice, error: mintPriceError } = useContractRead({
     address: isValidAddress ? (contractAddress as `0x${string}`) : undefined,
     abi: singleNFTABI,
     functionName: "mintPrice",
-    query: { enabled: enabled && isValidAddress },
+    enabled: enabled && isValidAddress,
     chainId: 10143,
   });
 
-  const { data: totalSupply, error: totalSupplyError } = useReadContract({
+  const { data: totalSupply, error: totalSupplyError } = useContractRead({
     address: isValidAddress ? (contractAddress as `0x${string}`) : undefined,
     abi: singleNFTABI,
     functionName: "totalSupply",
-    query: { enabled: enabled && isValidAddress },
+    enabled: enabled && isValidAddress,
     chainId: 10143,
   });
 
-  const { data: mintedCount, error: mintedCountError } = useReadContract({
+  const { data: mintedCount, error: mintedCountError } = useContractRead({
     address: isValidAddress ? (contractAddress as `0x${string}`) : undefined,
     abi: singleNFTABI,
     functionName: "mintedCount",
-    query: { enabled: enabled && isValidAddress },
+    enabled: enabled && isValidAddress,
     chainId: 10143,
   });
 
-  const { data: metadataURI, error: metadataURIError } = useReadContract({
+  const { data: metadataURI, error: metadataURIError } = useContractRead({
     address: isValidAddress ? (contractAddress as `0x${string}`) : undefined,
     abi: singleNFTABI,
     functionName: "metadataURI",
-    query: { enabled: enabled && isValidAddress },
+    enabled: enabled && isValidAddress,
     chainId: 10143,
   });
 
@@ -301,7 +301,7 @@ export const PurchasedNFTsTab = ({ fid }: PurchasedNFTsTabProps) => {
 
       if (!receipt) {
         throw new Error(
-          `Mint transaction receipt not found after ${maxRetries} retries. Check: https://testnet.monadexplorer.com//tx/${txHash}`
+          `Mint transaction receipt not found after ${maxRetries} retries. Check: https://testnet.monadexplorer.com/tx/${txHash}`
         );
       }
       if (receipt.status === "reverted") {
