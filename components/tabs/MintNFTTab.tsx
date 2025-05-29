@@ -294,7 +294,7 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
           console.log(`Mint receipt not found, retrying (${i + 1}/${maxRetries})...`);
           await new Promise(resolve => setTimeout(resolve, retryDelay));
         } catch (err) {
-          console.log(`Retry ${i + 1:`, err);
+          console.log(`Retry ${i + 1}`, err);
         }
       }
 
