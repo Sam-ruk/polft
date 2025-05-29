@@ -25,52 +25,67 @@ const monadTestnet = {
 const useNFTDetails = (contractAddress: string, enabled: boolean) => {
   const isValidAddress = ethers.isAddress(contractAddress);
 
-  const { data: name, error: nameError } = useContractRead({
-    address: isValidAddress ? (contractAddress as `0x${string}`) : undefined,
-    abi: singleNFTABI,
-    functionName: "name",
-    enabled: enabled && isValidAddress,
-    chainId: 10143,
-  });
+  const { data: name, error: nameError } = useContractRead(
+    isValidAddress && enabled
+      ? {
+          address: contractAddress as `0x${string}`,
+          abi: singleNFTABI,
+          functionName: "name",
+          chainId: 10143,
+        }
+      : { address: undefined, abi: singleNFTABI, functionName: "name" }
+  );
 
-  const { data: mintPrice, error: mintPriceError } = useContractRead({
-    address: isValidAddress ? (contractAddress as `0x${string}`) : undefined,
-    abi: singleNFTABI,
-    functionName: "mintPrice",
-    enabled: enabled && isValidAddress,
-    chainId: 10143,
-  });
+  const { data: mintPrice, error: mintPriceError } = useContractRead(
+    isValidAddress && enabled
+      ? {
+          address: contractAddress as `0x${string}`,
+          abi: singleNFTABI,
+          functionName: "mintPrice",
+          chainId: 10143,
+        }
+      : { address: undefined, abi: singleNFTABI, functionName: "mintPrice" }
+  );
 
-  const { data: totalSupply, error: totalSupplyError } = useContractRead({
-    address: isValidAddress ? (contractAddress as `0x${string}`) : undefined,
-    abi: singleNFTABI,
-    functionName: "totalSupply",
-    enabled: enabled && isValidAddress,
-    chainId: 10143,
-  });
+  const { data: totalSupply, error: totalSupplyError } = useContractRead(
+    isValidAddress && enabled
+      ? {
+          address: contractAddress as `0x${string}`,
+          abi: singleNFTABI,
+          functionName: "totalSupply",
+          chainId: 10143,
+        }
+      : { address: undefined, abi: singleNFTABI, functionName: "totalSupply" }
+  );
 
-  const { data: mintedCount, error: mintedCountError } = useContractRead({
-    address: isValidAddress ? (contractAddress as `0x${string}`) : undefined,
-    abi: singleNFTABI,
-    functionName: "mintedCount",
-    enabled: enabled && isValidAddress,
-    chainId: 10143,
-  });
+  const { data: mintedCount, error: mintedCountError } = useContractRead(
+    isValidAddress && enabled
+      ? {
+          address: contractAddress as `0x${string}`,
+          abi: singleNFTABI,
+          functionName: "mintedCount",
+          chainId: 10143,
+        }
+      : { address: undefined, abi: singleNFTABI, functionName: "mintedCount" }
+  );
 
-  const { data: metadataURI, error: metadataURIError } = useContractRead({
-    address: isValidAddress ? (contractAddress as `0x${string}`) : undefined,
-    abi: singleNFTABI,
-    functionName: "metadataURI",
-    enabled: enabled && isValidAddress,
-    chainId: 10143,
-  });
+  const { data: metadataURI, error: metadataURIError } = useContractRead(
+    isValidAddress && enabled
+      ? {
+          address: contractAddress as `0x${string}`,
+          abi: singleNFTABI,
+          functionName: "metadataURI",
+          chainId: 10143,
+        }
+      : { address: undefined, abi: singleNFTABI, functionName: "metadataURI" }
+  );
 
   const [image, setImage] = useState<string | undefined>(undefined);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchMetadata = async () => {
-      if (metadataURI) {
+      if (metadataURI && enabled && isValidAddress) {
         try {
           const metadataResponse = await fetch(metadataURI as string);
           if (!metadataResponse.ok) throw new Error("Failed to fetch metadata");
@@ -82,7 +97,7 @@ const useNFTDetails = (contractAddress: string, enabled: boolean) => {
       }
     };
     fetchMetadata();
-  }, [metadataURI]);
+  }, [metadataURI, enabled, isValidAddress]);
 
   const isSoldOut =
     mintedCount && totalSupply ? Number(mintedCount) >= Number(totalSupply) : false;
