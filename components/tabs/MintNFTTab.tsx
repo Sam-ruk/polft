@@ -3,11 +3,26 @@
 import { useState, useCallback, useEffect } from "react";
 import { CanvasDrawing } from "../CanvasDrawing";
 import { tokenCreatorABI, factoryAddress, singleNFTABI } from "../../lib/contractABI";
-import { useConnect, useReadContract, useWriteContract, useAccount } from "wagmi";
+import { useConnect, useReadContract, useWriteContract, useAccount, useNetwork, useSwitchNetwork } from "wagmi";
 import { farcasterFrame } from "@farcaster/frame-wagmi-connector";
 import { parseEther } from "viem";
 import { createPublicClient, http } from "viem";
 import { ethers } from "ethers";
+
+const monadTestnet = {
+  id: 10143,
+  name: "Monad Testnet",
+  network: "monad-testnet",
+  nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://testnet-rpc.monad.xyz"] },
+    public: { http: ["https://testnet-rpc.monad.xyz"] },
+  },
+  blockExplorers: {
+    default: { name: "Monad Explorer", url: "https://explorer.testnet.monad.xyz" },
+  },
+  testnet: true,
+};
 
 // Fetch NFT details
 const useNFTDetails = (contractAddress: string, enabled: boolean) => {
@@ -106,6 +121,8 @@ interface MintNFTTabProps {
 
 export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabProps) => {
   const { connect } = useConnect();
+  const { chain } = useNetwork();
+  const { switchNetwork } = useSwitchNetwork();
   const [canvasImage, setCanvasImage] = useState<string | null>(null);
   const [canvasSize, setCanvasSize] = useState(300);
   const [name, setName] = useState("");
@@ -150,6 +167,7 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
     address: factoryAddress,
     abi: tokenCreatorABI,
     functionName: "tokenCount",
+    chainId: 10143,
   });
 
   // Write createToken
@@ -182,6 +200,17 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
     }
   }, [mintName, mintPrice, mintTotalSupply, mintedCount, metadataURI, mintImage, isSoldOut, nftDetailsError]);
 
+  useEffect(() => {
+    if (chain && chain.id !== 10143) {
+      setError("Wrong network detected. Please switch to Monad Testnet.");
+      if (switchNetwork) {
+        switchNetwork({ chainId: 10143 });
+      }
+    } else {
+      setError(null);
+    }
+  }, [chain, switchNetwork]);
+
   const [mintDetails, setMintDetails] = useState<{
     name: string;
     mintPrice: string;
@@ -192,11 +221,35 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
     isSoldOut: boolean;
   } | null>(null);
 
-  const handleConnectWallet = () => {
+  const addMonadTestnet = async () => {
     try {
+      await window.ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [
+          {
+            chainId: "0x27B7",
+            chainName: "Monad Testnet",
+            nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 },
+            rpcUrls: ["https://testnet-rpc.monad.xyz"],
+            blockExplorerUrls: ["https://explorer.testnet.monad.xyz"],
+          },
+        ],
+      });
+    } catch (err) {
+      console.error("Failed to add Monad Testnet:", err);
+    }
+  };
+
+  const handleConnectWallet = async () => {
+    try {
+      await addMonadTestnet();
+      if (switchNetwork) {
+        await switchNetwork({ chainId: 10143 });
+      }
       connect({ connector: farcasterFrame() });
     } catch (err: any) {
-      setError("Failed to connect wallet.");
+      setError("Failed to connect wallet or switch to Monad Testnet.");
+      console.error(err);
     }
   };
 
@@ -211,7 +264,6 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
     }
     setIsMintLoading(true);
     setMintError(null);
-    // Data fetching is handled by useNFTDetails hook
     setIsMintLoading(false);
   }, [address, mintContractAddress]);
 
@@ -233,6 +285,10 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
     setMintError(null);
 
     try {
+      if (switchNetwork) {
+        await switchNetwork({ chainId: 10143 });
+      }
+
       const priceInWei = parseEther(mintPrice);
 
       const txHash = await writeContractAsync({
@@ -240,16 +296,11 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
         abi: singleNFTABI,
         functionName: "mint",
         value: priceInWei,
+        chainId: 10143,
       });
 
       const publicClient = createPublicClient({
-        chain: {
-          id: 10143,
-          name: "Monad Testnet",
-          rpcUrls: { default: { http: ["https://testnet-rpc.monad.xyz"] } },
-          nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 },
-          blockExplorers: { default: { name: "Monad Explorer", url: "https://explorer.testnet.monad.xyz" } },
-        },
+        chain: monadTestnet,
         transport: http("https://testnet-rpc.monad.xyz", { timeout: 30000 }),
       });
 
@@ -287,7 +338,11 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
       );
       alert("NFT minted successfully!");
     } catch (error: any) {
-      setMintError("Failed to mint NFT.");
+      if (error.name === "ConnectorChainMismatchError") {
+        setMintError("Wallet is on the wrong network. Please switch to Monad Testnet.");
+      } else {
+        setMintError("Failed to mint NFT: " + error.message);
+      }
       console.error("Mint NFT error:", error);
     } finally {
       setIsMintLoading(false);
@@ -326,6 +381,10 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
     setError(null);
 
     try {
+      if (switchNetwork) {
+        await switchNetwork({ chainId: 10143 });
+      }
+
       const priceInWei = parseEther(price);
       const totalSupplyNum = parseInt(totalSupply);
       if (isNaN(totalSupplyNum) || totalSupplyNum <= 0) {
@@ -390,13 +449,7 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
 
       // Estimate gas
       const publicClient = createPublicClient({
-        chain: {
-          id: 10143,
-          name: "Monad Testnet",
-          rpcUrls: { default: { http: ["https://testnet-rpc.monad.xyz"] } },
-          nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 },
-          blockExplorers: { default: { name: "Monad Explorer", url: "https://explorer.testnet.monad.xyz" } },
-        },
+        chain: monadTestnet,
         transport: http("https://testnet-rpc.monad.xyz", { timeout: 30000 }),
       });
 
@@ -414,7 +467,8 @@ export const MintNFTTab = ({ fid, address, addFrame, composeCast }: MintNFTTabPr
         abi: tokenCreatorABI,
         functionName: "createToken",
         args: [name, symbol, metadataUrl, priceInWei, totalSupplyNum],
-        gas: (estimatedGas * BigInt(12)) / BigInt(10), // 20% buffer
+        gas: (estimatedGas * BigInt(12)) / BigInt(10),
+        chainId: 10143,
       });
       console.log("Transaction sent:", txHash);
 
