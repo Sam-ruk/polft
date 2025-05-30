@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { useAccount, useWriteContract, useSwitchChain, useChainId, useContractRead } from "wagmi";
+import { useAccount, useWriteContract, useSwitchChain, useChainId } from "wagmi";
 import { createPublicClient, http, parseEther } from "viem";
 import { ethers } from "ethers";
 import { singleNFTABI } from "../../lib/contractABI";
@@ -258,158 +258,171 @@ export const PurchasedNFTsTab = ({ fid }: PurchasedNFTsTabProps) => {
 
   // Handle minting NFT from dialog
   const handleMintNFT = async () => {
-  console.log("Starting mint process...", { address, contractAddress, mintPrice, chainId });
-  if (!address) {
-    setMintError("Please connect your wallet");
-    console.error("No wallet address");
-    setIsMintLoading(false);
-    return;
-  }
-  if (!ethers.isAddress(contractAddress)) {
-    setMintError("Invalid contract address");
-    console.error("Invalid contract address:", contractAddress);
-    setIsMintLoading(false);
-    return;
-  }
-  if (!mintPrice) {
-    setMintError("Mint price not loaded. Please try again.");
-    console.error("Mint price missing");
-    setIsMintLoading(false);
-    return;
-  }
-  if (!mintDetails) {
-    setMintError("NFT details not loaded. Please try again.");
-    console.error("mintDetails is null");
-    setIsMintLoading(false);
-    return;
-  }
-  if (mintDetails.isSoldOut) {
-    setMintError("NFT is sold out");
-    console.error("NFT is sold out");
-    setIsMintLoading(false);
-    return;
-  }
-  if (chainId !== targetChainId) {
-    setMintError("Please switch to Monad Testnet (Chain ID: 10143)");
-    console.log("Attempting to switch chain...");
-    try {
-      await window.ethereum.request({
-        method: "wallet_addEthereumChain",
-        params: [monadTestnet],
-      });
-      await switchChainAsync({ chainId: targetChainId });
-      console.log("Switched to Monad Testnet");
-    } catch (error: any) {
-      setMintError(`Failed to switch to Monad Testnet: ${error.message || "Unknown error"}`);
-      console.error("Switch chain error:", error);
+    console.log("Starting mint process...", { address, contractAddress, mintPrice, chainId });
+    if (!address) {
+      setMintError("Please connect your wallet");
+      console.error("No wallet address");
       setIsMintLoading(false);
       return;
     }
-  }
-
-  setIsMintLoading(true);
-  setMintError(null);
-
-  try {
-    const publicClient = createPublicClient({
-      chain: monadTestnet,
-      transport: http("https://monad-testnet.g.alchemy.com/v2/kgba2A2om3dyvvOWDkRbB74QvRbhr5uQ", { timeout: 30000 }),
-    });
-
-    // Check balance
-    const balance = await publicClient.getBalance({ address });
-    console.log("Wallet balance:", ethers.formatEther(balance), "Required:", mintPrice);
-    if (Number(ethers.formatEther(balance)) < Number(mintPrice) + 0.01) {
-      throw new Error("Insufficient funds for minting and gas");
+    if (!ethers.isAddress(contractAddress)) {
+      setMintError("Invalid contract address");
+      console.error("Invalid contract address:", contractAddress);
+      setIsMintLoading(false);
+      return;
     }
-
-    // Simulate transaction
-    try {
-      const result = await publicClient.call({
-        account: address,
-        to: contractAddress as `0x${string}`,
-        data: encodeFunctionData({
-          abi: singleNFTABI,
-          functionName: "mint",
-        }),
-        value: parseEther(mintPrice),
-      });
-      console.log("Simulated call result:", result);
-    } catch (error) {
-      console.error("Simulated call failed:", error);
-      throw new Error("Contract call simulation failed");
+    if (!mintPrice) {
+      setMintError("Mint price not loaded. Please try again.");
+      console.error("Mint price missing");
+      setIsMintLoading(false);
+      return;
     }
-
-    // Send transaction
-    console.log("Sending mint transaction...");
-    const txHash = await writeContractAsync({
-      address: contractAddress as `0x${string}`,
-      abi: singleNFTABI,
-      functionName: "mint",
-      value: parseEther(mintPrice),
-      chainId: targetChainId,
-    });
-    console.log("Transaction hash:", txHash);
-
-    // Poll for receipt
-    let receipt = null;
-    const maxRetries = 20;
-    const retryDelay = 5000;
-    for (let i = 0; i < maxRetries; i++) {
+    if (!mintDetails) {
+      setMintError("NFT details not loaded. Please try again.");
+      console.error("mintDetails is null");
+      setIsMintLoading(false);
+      return;
+    }
+    if (mintDetails.isSoldOut) {
+      setMintError("NFT is sold out");
+      console.error("NFT is sold out");
+      setIsMintLoading(false);
+      return;
+    }
+    if (chainId !== targetChainId) {
+      setMintError("Please switch to Monad Testnet (Chain ID: 10143)");
+      console.log("Attempting to switch chain...");
       try {
-        console.log(`Polling for receipt, attempt ${i + 1}/${maxRetries}...`);
-        receipt = await publicClient.getTransactionReceipt({ hash: txHash });
-        console.log("Receipt:", receipt);
-        if (receipt) break;
-        await new Promise((resolve) => setTimeout(resolve, retryDelay));
-      } catch (err) {
-        console.error(`Receipt retry ${i + 1} failed:`, err);
+        await switchChainAsync({ chainId: targetChainId });
+        console.log("Switched to Monad Testnet using switchChainAsync");
+      } catch (error: any) {
+        if (typeof window !== "undefined" && window.ethereum) {
+          try {
+            await window.ethereum.request({
+              method: "wallet_addEthereumChain",
+              params: [monadTestnet],
+            });
+            await switchChainAsync({ chainId: targetChainId });
+            console.log("Added and switched to Monad Testnet");
+          } catch (addChainError: any) {
+            setMintError(`Failed to add/switch to Monad Testnet: ${addChainError.message || "Unknown error"}`);
+            console.error("Add chain error:", addChainError);
+            setIsMintLoading(false);
+            return;
+          }
+        } else {
+          setMintError("No wallet provider detected (e.g., MetaMask). Please install a wallet.");
+          console.error("window.ethereum is undefined");
+          setIsMintLoading(false);
+          return;
+        }
       }
     }
 
-    if (!receipt) {
-      throw new Error(
-        `Transaction receipt not found after ${maxRetries} retries. Check: https://testnet.monadexplorer.com/tx/${txHash}`
-      );
-    }
-    if (receipt.status === "reverted") {
-      throw new Error("Transaction reverted. Check contract conditions.");
-    }
+    setIsMintLoading(true);
+    setMintError(null);
 
-    // Update user's bought array
-    console.log("Updating user data...");
-    const userResponse = await fetch(`/api/users?fid=${fid}`);
-    if (!userResponse.ok) throw new Error("Failed to fetch user data");
-    const userData = await userResponse.json();
-    const updatedBought = [...(userData.bought || []), contractAddress];
+    try {
+      const publicClient = createPublicClient({
+        chain: monadTestnet,
+        transport: http("https://monad-testnet.g.alchemy.com/v2/kgba2A2om3dyvvOWDkRbB74QvRbhr5uQ", { timeout: 30000 }),
+      });
 
-    const updateUserResponse = await fetch("/api/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        fid,
-        mine: userData.mine || [],
-        bought: updatedBought,
-      }),
-    });
-    if (!updateUserResponse.ok) {
-      console.error("API update failed, but mint succeeded");
-      setMintError("NFT minted, but failed to update user data");
+      // Check balance
+      const balance = await publicClient.getBalance({ address });
+      console.log("Wallet balance:", ethers.formatEther(balance), "Required:", mintPrice);
+      if (Number(ethers.formatEther(balance)) < Number(mintPrice) + 0.01) {
+        throw new Error("Insufficient funds for minting and gas");
+      }
+
+      // Simulate transaction
+      try {
+        const { encodeFunctionData } = await import("viem");
+        const result = await publicClient.call({
+          account: address,
+          to: contractAddress as `0x${string}`,
+          data: encodeFunctionData({
+            abi: singleNFTABI,
+            functionName: "mint",
+          }),
+          value: parseEther(mintPrice),
+        });
+        console.log("Simulated call result:", result);
+      } catch (error) {
+        console.error("Simulated call failed:", error);
+        throw new Error("Contract call simulation failed");
+      }
+
+      // Send transaction
+      console.log("Sending mint transaction...");
+      const txHash = await writeContractAsync({
+        address: contractAddress as `0x${string}`,
+        abi: singleNFTABI,
+        functionName: "mint",
+        value: parseEther(mintPrice),
+        chainId: targetChainId,
+      });
+      console.log("Transaction hash:", txHash);
+
+      // Poll for receipt
+      let receipt = null;
+      const maxRetries = 20;
+      const retryDelay = 5000;
+      for (let i = 0; i < maxRetries; i++) {
+        try {
+          console.log(`Polling for receipt, attempt ${i + 1}/${maxRetries}...`);
+          receipt = await publicClient.getTransactionReceipt({ hash: txHash });
+          console.log("Receipt:", receipt);
+          if (receipt) break;
+          await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        } catch (err) {
+          console.error(`Receipt retry ${i + 1} failed:`, err);
+        }
+      }
+
+      if (!receipt) {
+        throw new Error(
+          `Transaction receipt not found after ${maxRetries} retries. Check: https://testnet.monadexplorer.com/tx/${txHash}`
+        );
+      }
+      if (receipt.status === "reverted") {
+        throw new Error("Transaction reverted. Check contract conditions.");
+      }
+
+      // Update user's bought array
+      console.log("Updating user data...");
+      const userResponse = await fetch(`/api/users?fid=${fid}`);
+      if (!userResponse.ok) throw new Error("Failed to fetch user data");
+      const userData = await userResponse.json();
+      const updatedBought = [...(userData.bought || []), contractAddress];
+
+      const updateUserResponse = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fid,
+          mine: userData.mine || [],
+          bought: updatedBought,
+        }),
+      });
+      if (!updateUserResponse.ok) {
+        console.error("API update failed, but mint succeeded");
+        setMintError("NFT minted, but failed to update user data");
+      }
+
+      console.log("Mint successful, refreshing NFTs...");
+      await fetchNFTs();
+      setIsDialogOpen(false);
+      setContractAddress("");
+      alert("NFT minted successfully!");
+    } catch (error: any) {
+      console.error("Mint error:", error);
+      setMintError(`Failed to mint NFT: ${error.message || "Unknown error"}`);
+    } finally {
+      setIsMintLoading(false);
+      console.log("Mint process complete");
     }
-
-    console.log("Mint successful, refreshing NFTs...");
-    await fetchNFTs();
-    setIsDialogOpen(false);
-    setContractAddress("");
-    alert("NFT minted successfully!");
-  } catch (error: any) {
-    console.error("Mint error:", error);
-    setMintError(`Failed to mint NFT: ${error.message || "Unknown error"}`);
-  } finally {
-    setIsMintLoading(false);
-    console.log("Mint process complete");
-  }
-};
+  };
 
   // Close dialog
   const handleCloseDialog = () => {
@@ -441,7 +454,7 @@ export const PurchasedNFTsTab = ({ fid }: PurchasedNFTsTabProps) => {
               isMintLoading || !address || nftDetailsLoading ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
-            {nftDetailsLoading ? "Loading..." : "Mint"}
+            {nftDetailsLoading ? "Loading..." : "Load Details"}
           </button>
         </div>
 
@@ -469,7 +482,7 @@ export const PurchasedNFTsTab = ({ fid }: PurchasedNFTsTabProps) => {
         )}
 
         {isDialogOpen && mintDetails && (
-          <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-[1000] animate-fadeIn">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[1000] animate-fadeIn">
             <div className="bg-white rounded-2xl w-full max-w-lg mx-4 p-6 shadow-2xl transform transition-all duration-300">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-bold text-[#4B0082]">Mint NFT</h2>
