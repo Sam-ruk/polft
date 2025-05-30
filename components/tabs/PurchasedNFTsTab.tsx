@@ -25,60 +25,45 @@ const monadTestnet = {
 const useNFTDetails = (contractAddress: string, enabled: boolean) => {
   const isValidAddress = ethers.isAddress(contractAddress);
 
-  const { data: name, error: nameError } = useContractRead(
-    isValidAddress && enabled
-      ? {
-          address: contractAddress as `0x${string}`,
-          abi: singleNFTABI,
-          functionName: "name",
-          chainId: 10143,
-        }
-      : { address: undefined, abi: singleNFTABI, functionName: "name" }
-  );
+  const { data: name, error: nameError } = useReadContract({
+    address: isValidAddress && enabled ? (contractAddress as `0x${string}`) : undefined,
+    abi: singleNFTABI,
+    functionName: "name",
+    chainId: 10143,
+    query: { enabled: enabled && isValidAddress },
+  });
 
-  const { data: mintPrice, error: mintPriceError } = useContractRead(
-    isValidAddress && enabled
-      ? {
-          address: contractAddress as `0x${string}`,
-          abi: singleNFTABI,
-          functionName: "mintPrice",
-          chainId: 10143,
-        }
-      : { address: undefined, abi: singleNFTABI, functionName: "mintPrice" }
-  );
+  const { data: mintPrice, error: mintPriceError } = useReadContract({
+    address: isValidAddress && enabled ? (contractAddress as `0x${string}`) : undefined,
+    abi: singleNFTABI,
+    functionName: "mintPrice",
+    chainId: 10143,
+    query: { enabled: enabled && isValidAddress },
+  });
 
-  const { data: totalSupply, error: totalSupplyError } = useContractRead(
-    isValidAddress && enabled
-      ? {
-          address: contractAddress as `0x${string}`,
-          abi: singleNFTABI,
-          functionName: "totalSupply",
-          chainId: 10143,
-        }
-      : { address: undefined, abi: singleNFTABI, functionName: "totalSupply" }
-  );
+  const { data: totalSupply, error: totalSupplyError } = useReadContract({
+    address: isValidAddress && enabled ? (contractAddress as `0x${string}`) : undefined,
+    abi: singleNFTABI,
+    functionName: "totalSupply",
+    chainId: 10143,
+    query: { enabled: enabled && isValidAddress },
+  });
 
-  const { data: mintedCount, error: mintedCountError } = useContractRead(
-    isValidAddress && enabled
-      ? {
-          address: contractAddress as `0x${string}`,
-          abi: singleNFTABI,
-          functionName: "mintedCount",
-          chainId: 10143,
-        }
-      : { address: undefined, abi: singleNFTABI, functionName: "mintedCount" }
-  );
+  const { data: mintedCount, error: mintedCountError } = useReadContract({
+    address: isValidAddress && enabled ? (contractAddress as `0x${string}`) : undefined,
+    abi: singleNFTABI,
+    functionName: "mintedCount",
+    chainId: 10143,
+    query: { enabled: enabled && isValidAddress },
+  });
 
-  const { data: metadataURI, error: metadataURIError } = useContractRead(
-    isValidAddress && enabled
-      ? {
-          address: contractAddress as `0x${string}`,
-          abi: singleNFTABI,
-          functionName: "metadataURI",
-          chainId: 10143,
-        }
-      : { address: undefined, abi: singleNFTABI, functionName: "metadataURI" }
-  );
+  const { data: metadataURI, error: metadataURIError } = useReadContract({
+    address: isValidAddress && enabled ? (contractAddress as `0x${string}`) : undefined,
+    abi: singleNFTABI,
+    functionName: "metadataURI",
+    chainId: 10143,
+    query: { enabled: enabled && isValidAddress },
+  });
 
   const [image, setImage] = useState<string | undefined>(undefined);
   const [fetchError, setFetchError] = useState<string | null>(null);
