@@ -258,103 +258,152 @@ export const PurchasedNFTsTab = ({ fid }: PurchasedNFTsTabProps) => {
 
   // Handle minting NFT from dialog
   const handleMintNFT = async () => {
-    if (!address) {
-      setMintError("Please connect your wallet");
-      return;
-    }
-    if (!ethers.isAddress(contractAddress)) {
-      setMintError("Invalid contract address");
-      return;
-    }
-    if (!mintPrice) {
-      setMintError("Mint price not loaded. Please try again.");
-      return;
-    }
-    if (chainId !== targetChainId) {
-      setMintError("Please switch to Monad Testnet (Chain ID: 10143)");
-      try {
-        await switchChainAsync({ chainId: targetChainId });
-      } catch (error: any) {
-        setMintError(`Failed to switch to Monad Testnet.`);
-        return;
-      }
-    }
-
-    setIsMintLoading(true);
-    setMintError(null);
-
+  console.log("Starting mint process...", { address, contractAddress, mintPrice, chainId });
+  if (!address) {
+    setMintError("Please connect your wallet");
+    console.error("No wallet address");
+    setIsMintLoading(false);
+    return;
+  }
+  if (!ethers.isAddress(contractAddress)) {
+    setMintError("Invalid contract address");
+    console.error("Invalid contract address:", contractAddress);
+    setIsMintLoading(false);
+    return;
+  }
+  if (!mintPrice) {
+    setMintError("Mint price not loaded. Please try again.");
+    console.error("Mint price missing");
+    setIsMintLoading(false);
+    return;
+  }
+  if (mintDetails.isSoldOut) {
+    setMintError("NFT is sold out");
+    console.error("NFT is sold out");
+    setIsMintLoading(false);
+    return;
+  }
+  if (chainId !== targetChainId) {
+    setMintError("Please switch to Monad Testnet (Chain ID: 10143)");
+    console.log("Attempting to switch chain...");
     try {
-      const publicClient = createPublicClient({
-        chain: monadTestnet,
-        transport: http("https://monad-testnet.g.alchemy.com/v2/kgba2A2om3dyvvOWDkRbB74QvRbhr5uQ", { timeout: 30000 }),
+      await window.ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [monadTestnet],
       });
-
-      const priceInWei = parseEther(mintPrice);
-
-      const txHash = await writeContractAsync({
-        address: contractAddress as `0x${string}`,
-        abi: singleNFTABI,
-        functionName: "mint",
-        value: priceInWei,
-        chainId: targetChainId,
-      });
-      console.log("Mint transaction sent:", txHash);
-
-      let receipt = null;
-      const maxRetries = 10;
-      const retryDelay = 3000;
-      for (let i = 0; i < maxRetries; i++) {
-        try {
-          receipt = await publicClient.getTransactionReceipt({ hash: txHash });
-          if (receipt) break;
-          console.log(`Mint receipt not found, retrying (${i + 1}/${maxRetries})...`);
-          await new Promise((resolve) => setTimeout(resolve, retryDelay));
-        } catch (err) {
-          console.log(`Mint retry ${i + 1} failed:`, err);
-        }
-      }
-
-      if (!receipt) {
-        throw new Error(
-          `Mint transaction receipt not found after ${maxRetries} retries. Check: https://testnet.monadexplorer.com/tx/${txHash}`
-        );
-      }
-      if (receipt.status === "reverted") {
-        throw new Error("Mint transaction reverted");
-      }
-
-      // Update user's bought array
-      const userResponse = await fetch(`/api/users?fid=${fid}`);
-      if (!userResponse.ok) throw new Error("Failed to fetch user data");
-      const userData = await userResponse.json();
-      const updatedBought = [...(userData.bought || []), contractAddress];
-
-      const updateUserResponse = await fetch("/api/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fid,
-          mine: userData.mine || [],
-          bought: updatedBought,
-        }),
-      });
-      if (!updateUserResponse.ok) {
-        const errorData = await updateUserResponse.json();
-        throw new Error(`Failed to update user: ${errorData.error || "Unknown error"}`);
-      }
-
-      // Refresh NFTs
-      await fetchNFTs();
-      setIsDialogOpen(false);
-      setContractAddress("");
-      alert("NFT minted successfully!");
+      await switchChainAsync({ chainId: targetChainId });
+      console.log("Switched to Monad Testnet");
     } catch (error: any) {
-      setMintError(`Failed to mint NFT.`);
-      console.error("Mint error:", error);
-    } finally {
+      setMintError(`Failed to switch to Monad Testnet: ${error.message || "Unknown error"}`);
+      console.error("Switch chain error:", error);
       setIsMintLoading(false);
+      return;
     }
-  };
+  }
+
+  setIsMintLoading(true);
+  setMintError(null);
+
+  try {
+    const publicClient = createPublicClient({
+      chain: monadTestnet,
+      transport: http("https://monad-testnet.g.alchemy.com/v2/kgba2A2om3dyvvOWDkRbB74QvRbhr5uQ", { timeout: 30000 }),
+    });
+
+    // Check balance
+    const balance = await publicClient.getBalance({ address });
+    console.log("Wallet balance:", ethers.formatEther(balance), "Required:", mintPrice);
+    if (Number(ethers.formatEther(balance)) < Number(mintPrice) + 0.01) {
+      throw new Error("Insufficient funds for minting and gas");
+    }
+
+    // Simulate transaction
+    try {
+      const result = await publicClient.call({
+        account: address,
+        to: contractAddress as `0x${string}`,
+        data: encodeFunctionData({
+          abi: singleNFTABI,
+          functionName: "mint",
+        }),
+        value: parseEther(mintPrice),
+      });
+      console.log("Simulated call result:", result);
+    } catch (error) {
+      console.error("Simulated call failed:", error);
+      throw new Error("Contract call simulation failed");
+    }
+
+    // Send transaction
+    console.log("Sending mint transaction...");
+    const txHash = await writeContractAsync({
+      address: contractAddress as `0x${string}`,
+      abi: singleNFTABI,
+      functionName: "mint",
+      value: parseEther(mintPrice),
+      chainId: targetChainId,
+    });
+    console.log("Transaction hash:", txHash);
+
+    // Poll for receipt
+    let receipt = null;
+    const maxRetries = 20;
+    const retryDelay = 5000;
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        console.log(`Polling for receipt, attempt ${i + 1}/${maxRetries}...`);
+        receipt = await publicClient.getTransactionReceipt({ hash: txHash });
+        console.log("Receipt:", receipt);
+        if (receipt) break;
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      } catch (err) {
+        console.error(`Receipt retry ${i + 1} failed:`, err);
+      }
+    }
+
+    if (!receipt) {
+      throw new Error(
+        `Transaction receipt not found after ${maxRetries} retries. Check: https://testnet.monadexplorer.com/tx/${txHash}`
+      );
+    }
+    if (receipt.status === "reverted") {
+      throw new Error("Transaction reverted. Check contract conditions.");
+    }
+
+    // Update user's bought array
+    console.log("Updating user data...");
+    const userResponse = await fetch(`/api/users?fid=${fid}`);
+    if (!userResponse.ok) throw new Error("Failed to fetch user data");
+    const userData = await userResponse.json();
+    const updatedBought = [...(userData.bought || []), contractAddress];
+
+    const updateUserResponse = await fetch("/api/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fid,
+        mine: userData.mine || [],
+        bought: updatedBought,
+      }),
+    });
+    if (!updateUserResponse.ok) {
+      console.error("API update failed, but mint succeeded");
+      setMintError("NFT minted, but failed to update user data");
+    }
+
+    console.log("Mint successful, refreshing NFTs...");
+    await fetchNFTs();
+    setIsDialogOpen(false);
+    setContractAddress("");
+    alert("NFT minted successfully!");
+  } catch (error: any) {
+    console.error("Mint error:", error);
+    setMintError(`Failed to mint NFT: ${error.message || "Unknown error"}`);
+  } finally {
+    setIsMintLoading(false);
+    console.log("Mint process complete");
+  }
+};
 
   // Close dialog
   const handleCloseDialog = () => {
