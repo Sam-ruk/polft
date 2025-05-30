@@ -275,7 +275,7 @@ export const PurchasedNFTsTab = ({ fid }: PurchasedNFTsTabProps) => {
       try {
         await switchChainAsync({ chainId: targetChainId });
       } catch (error: any) {
-        setMintError(`Failed to switch to Monad Testnet: ${error.message || "Unknown error"}`);
+        setMintError(`Failed to switch to Monad Testnet.`);
         return;
       }
     }
@@ -349,7 +349,7 @@ export const PurchasedNFTsTab = ({ fid }: PurchasedNFTsTabProps) => {
       setContractAddress("");
       alert("NFT minted successfully!");
     } catch (error: any) {
-      setMintError(`Failed to mint NFT: ${error.message || "Unknown error"}`);
+      setMintError(`Failed to mint NFT.`);
       console.error("Mint error:", error);
     } finally {
       setIsMintLoading(false);
