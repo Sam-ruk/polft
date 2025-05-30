@@ -277,6 +277,12 @@ export const PurchasedNFTsTab = ({ fid }: PurchasedNFTsTabProps) => {
     setIsMintLoading(false);
     return;
   }
+  if (!mintDetails) {
+    setMintError("NFT details not loaded. Please try again.");
+    console.error("mintDetails is null");
+    setIsMintLoading(false);
+    return;
+  }
   if (mintDetails.isSoldOut) {
     setMintError("NFT is sold out");
     console.error("NFT is sold out");
