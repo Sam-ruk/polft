@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { useAccount, useWriteContract, useSwitchChain, useChainId } from "wagmi";
+import { useAccount, useWriteContract, useSwitchChain, useChainId, useReadContract } from "wagmi";
 import { createPublicClient, http, parseEther } from "viem";
 import { ethers } from "ethers";
 import { singleNFTABI } from "../../lib/contractABI";
@@ -22,6 +22,7 @@ const monadTestnet = {
   testnet: true,
 };
 
+// useNFTDetails hook
 const useNFTDetails = (contractAddress: string, enabled: boolean) => {
   const isValidAddress = ethers.isAddress(contractAddress);
 
