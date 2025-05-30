@@ -212,7 +212,7 @@ export const PurchasedNFTsTab = ({ fid }: PurchasedNFTsTabProps) => {
       setMintError("Wrong network detected. Please switch to Monad Testnet.");
       if (switchChainAsync) {
         switchChainAsync({ chainId: targetChainId }).catch((err) => {
-          setMintError("Failed to switch to Monad Testnet.");
+          setMintError("Failed to switch to Monad Testnet. Please manually switch to Monad Testnet (Chain ID: 10143).");
           console.error("Network switch error:", err);
         });
       }
@@ -280,28 +280,14 @@ export const PurchasedNFTsTab = ({ fid }: PurchasedNFTsTabProps) => {
       console.log("Attempting to switch chain...");
       try {
         await switchChainAsync({ chainId: targetChainId });
-        console.log("Switched to Monad Testnet using switchChainAsync");
+        console.log("Switched to Monad Testnet");
       } catch (error: any) {
-        if (typeof window !== "undefined" && window.ethereum) {
-          try {
-            await window.ethereum.request({
-              method: "wallet_addEthereumChain",
-              params: [monadTestnet],
-            });
-            await switchChainAsync({ chainId: targetChainId });
-            console.log("Added and switched to Monad Testnet");
-          } catch (addChainError: any) {
-            setMintError(`Failed to add/switch to Monad Testnet: ${addChainError.message || "Unknown error"}`);
-            console.error("Add chain error:", addChainError);
-            setIsMintLoading(false);
-            return;
-          }
-        } else {
-          setMintError("No wallet provider detected (e.g., MetaMask). Please install a wallet.");
-          console.error("window.ethereum is undefined");
-          setIsMintLoading(false);
-          return;
-        }
+        setMintError(
+          `Failed to switch to Monad Testnet: ${error.message || "Unknown error"}. Please manually switch to Monad Testnet (Chain ID: 10143) in your wallet.`
+        );
+        console.error("Chain switch error:", error);
+        setIsMintLoading(false);
+        return;
       }
     }
 
